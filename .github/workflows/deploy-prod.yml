@@ -1,0 +1,407 @@
+name: Blue-Green Canary Deploy (2-Phase)
+
+on:
+  pull_request:
+    branches: [ dev ]
+    types: [ closed ]
+  push:
+    branches: [ dev ]
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Build Jar
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean bootJar --no-daemon
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/offnal-be:${{ env.IMAGE_TAG }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/offnal-be:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+  deploy:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Upload docker-compose and nginx config to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          source: "docker-compose.yml,nginx/conf.d/default.conf"
+          target: "/home/ubuntu/Offnal-BE"
+
+      - name: Canary Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT }}
+          envs: IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd /home/ubuntu/Offnal-BE
+
+            DEPLOY_LOCK="/tmp/offnal-deploy.lock"
+            UPSTREAM_FILE="nginx/conf.d/default.conf"
+
+            # ----------------------------
+            # 1) 동시 배포 방지
+            # ----------------------------
+            if [ -f "$DEPLOY_LOCK" ]; then
+              LOCK_PID=$(cat "$DEPLOY_LOCK" 2>/dev/null || echo "")
+              if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null; then
+                echo "이미 배포가 진행 중입니다 (PID: $LOCK_PID)"
+                exit 1
+              else
+                rm -f "$DEPLOY_LOCK"
+              fi
+            fi
+
+            echo $$ > "$DEPLOY_LOCK"
+            trap "rm -f $DEPLOY_LOCK" EXIT
+
+            echo "===== 배포 시작 ====="
+
+            # ----------------------------
+            # 2) 이미지 pull
+            # ----------------------------
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            NEW_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/offnal-be:latest"
+            echo "이미지 pull: $NEW_IMAGE"
+            sudo docker pull "$NEW_IMAGE"
+
+            # ----------------------------
+            # 3) 현재 활성 서비스 확인
+            # ----------------------------
+            if [ ! -f "$UPSTREAM_FILE" ]; then
+              echo "$UPSTREAM_FILE 파일이 없습니다"
+              exit 1
+            fi
+
+            if grep -E "spring_blue:8080.*weight=100" "$UPSTREAM_FILE" > /dev/null; then
+              CURRENT_COLOR="blue"
+              CURRENT_SERVICE="spring_blue"
+              CURRENT_PORT=8080
+              NEW_COLOR="green"
+              NEW_SERVICE="spring_green"
+              NEW_PORT=8081
+            else
+              CURRENT_COLOR="green"
+              CURRENT_SERVICE="spring_green"
+              CURRENT_PORT=8081
+              NEW_COLOR="blue"
+              NEW_SERVICE="spring_blue"
+              NEW_PORT=8080
+            fi
+
+            echo "현재 활성: $CURRENT_COLOR($CURRENT_PORT) → 새 버전: $NEW_COLOR($NEW_PORT)"
+
+            # ----------------------------
+            # 4) 로그 백업
+            # ----------------------------
+            LOG_DIR="logs/deploy-history"
+            mkdir -p "$LOG_DIR"
+            TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+            if sudo docker-compose ps "$CURRENT_SERVICE" | grep -q "Up"; then
+              sudo docker-compose logs "$CURRENT_SERVICE" --tail=500 > \
+                "$LOG_DIR/$TIMESTAMP-$CURRENT_COLOR.log" 2>&1 || true
+            fi
+
+            # ----------------------------
+            # 5) 새 서비스 시작
+            # ----------------------------
+            sudo docker-compose up -d redis
+
+            sudo docker-compose stop "$NEW_SERVICE" || true
+            sudo docker-compose rm -f "$NEW_SERVICE" || true
+            
+            echo "새 서비스 시작: $NEW_SERVICE"
+            sudo docker-compose up -d "$NEW_SERVICE"
+
+            sleep 5
+
+            # ----------------------------
+            # 6) Health Check (연속 3회 성공)
+            # ----------------------------
+            echo "Health Check 시작..."
+            HEALTH=false
+            CONSECUTIVE=0
+
+            for i in {1..50}; do
+              sleep 3
+              if curl -fsS "http://localhost:${NEW_PORT}/actuator/health" > /dev/null 2>&1; then
+                CONSECUTIVE=$((CONSECUTIVE + 1))
+                echo "✓ 정상 ($CONSECUTIVE/3)"
+                if [ $CONSECUTIVE -ge 3 ]; then
+                  HEALTH=true
+                  break
+                fi
+              else
+                CONSECUTIVE=0
+                echo "Health check 실패, 재시도 $i/50"
+              fi
+            done
+
+            if [ "$HEALTH" = false ]; then
+              echo "Health check 실패 (50회 시도)"
+              sudo docker-compose logs "$NEW_SERVICE" --tail=200 || true
+              sudo docker-compose stop "$NEW_SERVICE" || true
+              sudo docker-compose rm -f "$NEW_SERVICE" || true
+              exit 1
+            fi
+
+            # ----------------------------
+            # 7) 프리워밍
+            # ----------------------------
+            echo "프리워밍 중..."
+            for i in {1..20}; do
+              curl -fsS "http://localhost:${NEW_PORT}/actuator/health" > /dev/null 2>&1 || true
+              sleep 1
+            done
+            sleep 10
+
+            # ----------------------------
+            # 8) nginx 확인
+            # ----------------------------
+            if ! sudo docker-compose ps nginx | grep -q "Up"; then
+              echo "nginx 시작..."
+              sudo docker-compose up -d nginx
+              sleep 3
+            fi
+
+            # ----------------------------
+            # weight 설정 함수
+            # ----------------------------
+            set_weight() {
+              local blue_weight=$1
+              local green_weight=$2
+
+              cp "$UPSTREAM_FILE" "$UPSTREAM_FILE.bak"
+
+              # weight=0 방지
+              local bw="$blue_weight"
+              local gw="$green_weight"
+              if [ "$bw" -eq 0 ]; then bw=1; fi
+              if [ "$gw" -eq 0 ]; then gw=1; fi
+
+              # weight 숫자 갱신
+              sed -i -E "s/(server spring_blue:8080[[:space:]]+weight=)[0-9]+/\1${bw}/" "$UPSTREAM_FILE"
+              sed -i -E "s/(server spring_green:8080[[:space:]]+weight=)[0-9]+/\1${gw}/" "$UPSTREAM_FILE"
+
+              if [ "$blue_weight" -eq 100 ] && [ "$green_weight" -eq 0 ]; then
+                sed -i -E "s/(server spring_green:8080[^;]*);/\1 down;/" "$UPSTREAM_FILE"
+                sed -i -E "s/(server spring_blue:8080[^;]*) down;/\1;/" "$UPSTREAM_FILE"
+              elif [ "$blue_weight" -eq 0 ] && [ "$green_weight" -eq 100 ]; then
+                sed -i -E "s/(server spring_blue:8080[^;]*);/\1 down;/" "$UPSTREAM_FILE"
+                sed -i -E "s/(server spring_green:8080[^;]*) down;/\1;/" "$UPSTREAM_FILE"
+              else
+                sed -i -E "s/(server spring_blue:8080[^;]*) down;/\1;/" "$UPSTREAM_FILE"
+                sed -i -E "s/(server spring_green:8080[^;]*) down;/\1;/" "$UPSTREAM_FILE"
+              fi
+
+              if sudo docker-compose exec nginx nginx -t; then
+                sudo docker-compose exec nginx nginx -s reload
+                return 0
+              else
+                echo "nginx 설정 오류, 롤백"
+                cp "$UPSTREAM_FILE.bak" "$UPSTREAM_FILE"
+                sudo docker-compose exec nginx nginx -s reload || true
+                return 1
+              fi
+            }
+
+            # ----------------------------
+            # Canary 모니터링 함수 ( /login/page 기준, 추후 기준 api 변경)
+            # ----------------------------
+            monitor_canary() {
+            local duration=$1
+            local endpoint="/login/page"
+            
+            
+            local host_header
+            host_header=$(grep -m1 -E "^[[:space:]]*server_name[[:space:]]+" "$UPSTREAM_FILE" \
+            | awk '{print $2}' | tr -d ';')
+
+              # 혹시 못 찾으면 fallback
+              if [ -z "$host_header" ]; then
+              host_header="localhost"
+              fi
+              
+              echo "모니터링 중 (${duration}초)... endpoint=${endpoint}, host=${host_header}"
+              
+              local fail_count=0
+              local total_checks=$((duration / 3))
+              
+              for i in $(seq 1 $total_checks); do
+              sleep 3
+              
+              # 80은 301로 https로 보내므로 200~399면 OK로 처리
+              local code
+              code=$(curl -sS -o /dev/null -w "%{http_code}" -H "Host: ${host_header}" "http://localhost${endpoint}" || echo "000")
+                
+                if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+                echo "✓ /login/page OK (code=$code) [$i/$total_checks]"
+                else
+                fail_count=$((fail_count + 1))
+                echo "❌ /login/page FAIL (code=$code) (fail=$fail_count) [$i/$total_checks]"
+                fi
+                
+                if [ "$fail_count" -gt 3 ]; then
+                echo "에러 과다 발생 (/login/page 기준)"
+                return 1
+                fi
+                done
+                
+                echo "모니터링 완료 (/login/page 기준)"
+                return 0
+            }
+    
+              # ----------------------------
+              # 9) Canary Phase 1: 10% 트래픽
+              # ----------------------------
+              echo "1단계: 10% 트래픽 전환"
+    
+              if [ "$NEW_COLOR" = "blue" ]; then
+              if ! set_weight 10 90; then
+              echo "1단계 weight 설정 실패"
+              sudo docker-compose stop "$NEW_SERVICE" || true
+              sudo docker-compose rm -f "$NEW_SERVICE" || true
+              exit 1
+              fi
+              else
+              if ! set_weight 90 10; then
+              echo "1단계 weight 설정 실패"
+              sudo docker-compose stop "$NEW_SERVICE" || true
+              sudo docker-compose rm -f "$NEW_SERVICE" || true
+              exit 1
+              fi
+              fi
+              
+              if ! monitor_canary 30; then
+              echo "❌ 1단계 모니터링 실패, 롤백"
+              
+              # 트래픽 복구
+              if [ "$CURRENT_COLOR" = "blue" ]; then
+              set_weight 100 0 || true
+              else
+              set_weight 0 100 || true
+              fi
+              
+              sudo docker-compose stop "$NEW_SERVICE" || true
+              sudo docker-compose rm -f "$NEW_SERVICE" || true
+              exit 1
+              fi
+    
+              # ----------------------------
+              # 10) Full Switch: 100% 트래픽
+              # ----------------------------
+              echo "2단계: 100% 트래픽 전환"
+    
+              if [ "$NEW_COLOR" = "blue" ]; then
+              if ! set_weight 100 0; then
+              echo "전체 전환 실패"
+              # 10%로 되돌림
+              set_weight 10 90 || true
+              exit 1
+              fi
+              else
+              if ! set_weight 0 100; then
+              echo "전체 전환 실패"
+              # 10%로 되돌림
+              set_weight 90 10 || true
+              exit 1
+              fi
+              fi
+              
+              rm -f "$UPSTREAM_FILE.bak"
+              
+              # ----------------------------
+              # 11) 최종 검증
+              # ----------------------------
+              echo "최종 검증 중..."
+              sleep 10
+              
+              if ! curl -fsS "http://localhost:${NEW_PORT}/actuator/health" > /dev/null 2>&1; then
+              echo "최종 Health check 실패"
+              fi
+              
+              # ----------------------------
+              # 12) 기존 서비스 종료 (60초 유예)
+              # ----------------------------
+              echo "$CURRENT_COLOR 종료 대기 중 (60초 유예)..."
+              for i in {1..12}; do
+              echo -n "."
+              sleep 5
+              done
+              echo ""
+              
+              sudo docker-compose stop -t 30 "$CURRENT_SERVICE" || true
+              sudo docker-compose rm -f "$CURRENT_SERVICE" || true
+              
+              # ----------------------------
+              # 13) 배포 완료
+              # ----------------------------
+              echo ""
+              echo "=========================================="
+              echo "✅ 배포 완료"
+              echo "=========================================="
+              echo "시간: $(date '+%Y-%m-%d %H:%M:%S')"
+              echo "활성: $NEW_COLOR ($NEW_SERVICE:$NEW_PORT)"
+              echo "종료: $CURRENT_COLOR ($CURRENT_SERVICE)"
+              echo "단계: 10% → 100%"
+              echo "=========================================="

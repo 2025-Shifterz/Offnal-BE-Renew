@@ -1,0 +1,64 @@
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:8081}
+
+swagger:
+  server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
+
+spring:
+  profiles:
+    default: local
+  jackson:
+    time-zone: Asia/Seoul
+
+  application:
+    name: shifterz
+
+  data:
+    redis:
+      port: 6379
+      repositories:
+        enabled: false
+
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+
+jwt:
+  access-token-validity-second: 1800
+  refresh-token-validity-second: 604800
+
+kakao:
+  url:
+    token: https://kauth.kakao.com
+    user: https://kapi.kakao.com
+
+apple:
+  url:
+    token: https://appleid.apple.com
+    public-key: https://appleid.apple.com/auth/keys
+    revoke: https://appleid.apple.com/auth/revoke
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: ping
+        readiness:
+          include: db, redis
+
