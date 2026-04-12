@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  spring_blue:
+    container_name: spring_blue
+    image: ${DOCKERHUB_USERNAME}/offnal-be:latest
+    ports:
+      - "8080:8080"
+    restart: always
+    env_file:
+      - .env
+    environment:
+      URL: "${URL}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+      KAKAO_CLIENT_ID: "${KAKAO_CLIENT_ID}"
+      APPLE_PRIVATE_KEY_PATH: "/app/keys/apple.p8"
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE}"
+    volumes:
+      - /home/ubuntu/.secure/apple/AuthKey.p8:/app/keys/apple.p8:ro
+    networks:
+      - offnal-be_default
+      - offnal-network
+
+  spring_green:
+    container_name: spring_green
+    image: ${DOCKERHUB_USERNAME}/offnal-be:latest
+    ports:
+      - "8081:8080"
+    restart: always
+    env_file:
+      - .env
+    environment:
+      URL: "${URL}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+      KAKAO_CLIENT_ID: "${KAKAO_CLIENT_ID}"
+      APPLE_PRIVATE_KEY_PATH: "/app/keys/apple.p8"
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE}"
+    volumes:
+      - /home/ubuntu/.secure/apple/AuthKey.p8:/app/keys/apple.p8:ro
+    networks:
+      - offnal-be_default
+      - offnal-network
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.15-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - spring_blue
+    environment:
+      URL: "${URL}"
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+      KAKAO_CLIENT_ID: "${KAKAO_CLIENT_ID}"
+      SERVER_PORT: 80
+    networks:
+      - offnal-be_default
+      - offnal-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "PING" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - offnal-be_default
+
+volumes:
+  redis-data:
+
+networks:
+  offnal-be_default:
+    external: true
+    name: offnal-be_default
+
+  offnal-network:
+    external: true
+    name: offnal-network
