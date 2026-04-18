@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface WorkInstanceRepository extends JpaRepository<WorkInstance, Long> {
+public interface WorkInstanceRepository extends JpaRepository<WorkInstance, Long>, WorkInstanceRepositoryCustom {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from WorkInstance wi where wi.workCalendar.id = :calendarId")

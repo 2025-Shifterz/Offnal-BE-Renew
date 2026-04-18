@@ -36,10 +36,6 @@ public class WorkCalendar extends BaseTimeEntity {
             orphanRemoval = true)
     private List<WorkInstance> workInstances = new ArrayList<>();
 
-    // 동시성 제어 - 낙관적 락
-    @Version
-    private Long version;
-
     // ===== 메서드 =====
 
     public Long id() { return this.id; }
