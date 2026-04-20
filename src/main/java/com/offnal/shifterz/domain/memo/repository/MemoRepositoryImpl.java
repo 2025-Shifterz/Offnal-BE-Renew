@@ -25,10 +25,12 @@ public class MemoRepositoryImpl implements MemoRepositoryCustom{
                 .and(memo.targetDate.month().eq(targetDate.getMonthValue()))
                 .and(memo.targetDate.dayOfMonth().eq(targetDate.getDayOfMonth())));
 
+        if (organizationId != null) {
+            builder.and(memo.organization.id.eq(organizationId));
+        }
+
         if (unassigned) {
             builder.and(memo.organization.isNull());
-        } else if (organizationId != null) {
-            builder.and(memo.organization.id.eq(organizationId));
         }
 
         return queryFactory.selectFrom(memo).where(builder).fetch();
