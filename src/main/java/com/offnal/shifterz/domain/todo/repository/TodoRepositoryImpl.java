@@ -29,10 +29,11 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom{
                 .and(todo.targetDate.month().eq(targetDate.getMonthValue()))
                 .and(todo.targetDate.dayOfMonth().eq(targetDate.getDayOfMonth())));
 
+        if (organizationId != null) {
+            builder.and(todo.organization.id.eq(organizationId));
+        }
         if (unassigned) {
             builder.and(todo.organization.isNull());
-        } else if (organizationId != null) {
-            builder.and(todo.organization.id.eq(organizationId));
         }
 
         return queryFactory.selectFrom(todo).where(builder).fetch();
