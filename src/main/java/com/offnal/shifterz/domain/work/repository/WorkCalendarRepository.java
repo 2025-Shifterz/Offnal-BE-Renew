@@ -11,12 +11,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface WorkCalendarRepository extends JpaRepository<WorkCalendar, Long> {
-    Optional<WorkCalendar> findByIdAndMemberIdAndOrganization(Long calendarId, Long memberId, Organization organization);
-
+public interface WorkCalendarRepository extends JpaRepository<WorkCalendar, Long> , WorkCalendarRepositoryCustom{
     boolean existsByMemberIdAndOrganization(Long memberId, Organization organization);
-
-    Optional<WorkCalendar> findByMemberIdAndOrganization(Long memberId, Organization organization);
 
     List<WorkCalendar> findByMemberIdAndOrganizationOrderByIdDesc(Long memberId, Organization organization);
 

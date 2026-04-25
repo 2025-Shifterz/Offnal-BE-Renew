@@ -66,51 +66,6 @@ class WorkCalendarRepositoryTest {
                 .build());
     }
 
-    // ===== findByIdAndMemberIdAndOrganization =====
-
-    @Test
-    @DisplayName("id, memberId, organization 모두 일치하는 캘린더를 조회한다")
-    void findByIdAndMemberIdAndOrganization_success() {
-        // given
-        WorkCalendar calendar = saveCalendar(memberId, organization);
-
-        // when
-        Optional<WorkCalendar> result = workCalendarRepository
-                .findByIdAndMemberIdAndOrganization(calendar.getId(), memberId, organization);
-
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(calendar.getId());
-    }
-
-    @Test
-    @DisplayName("organization이 다르면 조회되지 않는다")
-    void findByIdAndMemberIdAndOrganization_wrongOrg() {
-        // given
-        WorkCalendar calendar = saveCalendar(memberId, organization);
-
-        // when
-        Optional<WorkCalendar> result = workCalendarRepository
-                .findByIdAndMemberIdAndOrganization(calendar.getId(), memberId, otherOrg);
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("memberId가 다르면 조회되지 않는다")
-    void findByIdAndMemberIdAndOrganization_wrongMemberId() {
-        // given
-        WorkCalendar calendar = saveCalendar(memberId, organization);
-
-        // when
-        Optional<WorkCalendar> result = workCalendarRepository
-                .findByIdAndMemberIdAndOrganization(calendar.getId(), 9999L, organization);
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
     // ===== existsByMemberIdAndOrganization =====
 
     @Test
@@ -134,35 +89,6 @@ class WorkCalendarRepositoryTest {
 
         // then
         assertThat(result).isFalse();
-    }
-
-    // ===== findByMemberIdAndOrganization =====
-
-    @Test
-    @DisplayName("memberId와 organization으로 캘린더를 조회한다")
-    void findByMemberIdAndOrganization_success() {
-        // given
-        saveCalendar(memberId, organization);
-
-        // when
-        Optional<WorkCalendar> result = workCalendarRepository.findByMemberIdAndOrganization(memberId, organization);
-
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getMemberId()).isEqualTo(memberId);
-    }
-
-    @Test
-    @DisplayName("다른 organization으로 조회하면 empty를 반환한다")
-    void findByMemberIdAndOrganization_wrongOrg() {
-        // given
-        saveCalendar(memberId, organization);
-
-        // when
-        Optional<WorkCalendar> result = workCalendarRepository.findByMemberIdAndOrganization(memberId, otherOrg);
-
-        // then
-        assertThat(result).isEmpty();
     }
 
     // ===== findByMemberIdAndOrganizationOrderByIdDesc =====
@@ -201,4 +127,88 @@ class WorkCalendarRepositoryTest {
         assertThat(result.get(0).getOrganization().getId()).isEqualTo(organization.getId());
     }
 
+    // ===== findCalendar =====
+
+    @Test
+    @DisplayName("calendarId 있을 때: id, memberId, organization이 모두 일치하는 캘린더를 조회한다")
+    void findCalendar_withCalendarId_success() {
+        // given
+        WorkCalendar calendar = saveCalendar(memberId, organization);
+
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(calendar.getId(), memberId, organization);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(calendar.getId());
+    }
+
+    @Test
+    @DisplayName("calendarId null일 때: memberId, organization으로 캘린더를 조회한다")
+    void findCalendar_withNullCalendarId_success() {
+        // given
+        WorkCalendar calendar = saveCalendar(memberId, organization);
+
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(null, memberId, organization);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(calendar.getId());
+    }
+
+    @Test
+    @DisplayName("calendarId 있을 때: organization이 다르면 empty를 반환한다")
+    void findCalendar_withCalendarId_wrongOrg_returnsEmpty() {
+        // given
+        WorkCalendar calendar = saveCalendar(memberId, organization);
+
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(calendar.getId(), memberId, otherOrg);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("calendarId null일 때: organization이 다르면 empty를 반환한다")
+    void findCalendar_withNullCalendarId_wrongOrg_returnsEmpty() {
+        // given
+        saveCalendar(memberId, organization);
+
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(null, memberId, otherOrg);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("calendarId 있을 때: 존재하지 않는 id면 empty를 반환한다")
+    void findCalendar_withCalendarId_wrongId_returnsEmpty() {
+        // given
+        saveCalendar(memberId, organization);
+
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(9999L, memberId, organization);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("calendarId null일 때: 캘린더가 없으면 empty를 반환한다")
+    void findCalendar_withNullCalendarId_noData_returnsEmpty() {
+        // when
+        Optional<WorkCalendar> result = workCalendarRepository
+                .findCalendar(null, memberId, organization);
+
+        // then
+        assertThat(result).isEmpty();
+    }
 }
