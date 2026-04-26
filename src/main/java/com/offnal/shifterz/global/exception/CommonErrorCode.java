@@ -3,7 +3,7 @@ package com.offnal.shifterz.global.exception;
 import lombok.Getter;
 
 @Getter
-public enum CommonErrorCode {
+public enum CommonErrorCode implements ErrorCode {
 
 	INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다."),
 	INVALID_REQUEST("잘못된 요청입니다."),

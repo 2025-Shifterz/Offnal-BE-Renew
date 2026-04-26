@@ -17,12 +17,6 @@ public class ErrorResponse {
 	private final String message;
 	private final Map<String, String> errors;
 
-	public static ErrorResponse from(CommonErrorCode errorCode) {
-		return ErrorResponse.builder()
-			.message(errorCode.getMessage())
-			.build();
-	}
-
 	public static ErrorResponse of(String message) {
 		return ErrorResponse.builder()
 			.message(message)
@@ -34,5 +28,9 @@ public class ErrorResponse {
 			.message(message)
 			.errors(errors)
 			.build();
+	}
+
+	public static ErrorResponse from(ErrorCode errorCode) {
+		return ErrorResponse.of(errorCode.getMessage());
 	}
 }

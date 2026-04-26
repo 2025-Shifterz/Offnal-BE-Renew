@@ -1,6 +1,8 @@
 package com.offnal.shifterz.global.exception;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -9,8 +11,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.offnal.shifterz.core.jwt.exception.TokenErrorCode;
+
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,7 +23,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
         log.error("[CustomException] {}", e.getMessage(), e);
 
-        CommonErrorCode errorCode = e.getErrorCode();
+        ErrorCode errorCode = e.getErrorCode();
 
         if (errorCode == null) {
             return ResponseEntity
@@ -27,15 +31,8 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.from(CommonErrorCode.INTERNAL_SERVER_ERROR));
         }
 
-        HttpStatus status = switch (errorCode) {
-            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-            case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
-            case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-        };
-
         return ResponseEntity
-            .status(status)
+            .status(resolveStatus(errorCode))
             .body(ErrorResponse.from(errorCode));
     }
 
@@ -53,26 +50,22 @@ public class GlobalExceptionHandler {
             .get(0)
             .getDefaultMessage();
 
-        ErrorResponse response = ErrorResponse.of(firstMessage, errors);
-
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
-            .body(response);
+            .body(ErrorResponse.of(firstMessage, errors));
     }
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ErrorResponse> handleBindException(BindException e) {
         log.error("[BindException] {}", e.getMessage(), e);
 
-        String message = e.getBindingResult()
-            .getFieldError()
-            .getDefaultMessage();
-
-        ErrorResponse response = ErrorResponse.of(message);
+        String message = e.getBindingResult().getFieldError() != null
+            ? e.getBindingResult().getFieldError().getDefaultMessage()
+            : CommonErrorCode.INVALID_REQUEST.getMessage();
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
-            .body(response);
+            .body(ErrorResponse.of(message));
     }
 
     @ExceptionHandler(Exception.class)
@@ -82,5 +75,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ErrorResponse.from(CommonErrorCode.INTERNAL_SERVER_ERROR));
+    }
+
+    private HttpStatus resolveStatus(ErrorCode errorCode) {
+        if (errorCode instanceof CommonErrorCode commonErrorCode) {
+            return switch (commonErrorCode) {
+                case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+                case FORBIDDEN -> HttpStatus.FORBIDDEN;
+                case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+                default -> HttpStatus.BAD_REQUEST;
+            };
+        }
+
+        if (errorCode instanceof TokenErrorCode) {
+            return HttpStatus.UNAUTHORIZED;
+        }
+
+        return HttpStatus.BAD_REQUEST;
     }
 }
