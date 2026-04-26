@@ -1,7 +1,5 @@
 package com.offnal.shifterz.domain.memberOrganizationTeam.domain;
 
-// package com.xxx.domain.organization.entity;
-
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.organization.domain.Organization;
 import jakarta.persistence.*;

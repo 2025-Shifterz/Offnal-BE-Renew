@@ -1,7 +1,7 @@
 package com.offnal.shifterz.domain.work.domain;
 
-import com.offnal.shifterz.global.BaseTimeEntity;
 import com.offnal.shifterz.domain.organization.domain.Organization;
+import com.offnal.shifterz.global.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,10 +35,6 @@ public class WorkCalendar extends BaseTimeEntity {
             cascade = CascadeType.REMOVE,
             orphanRemoval = true)
     private List<WorkInstance> workInstances = new ArrayList<>();
-
-    // 동시성 제어 - 낙관적 락
-    @Version
-    private Long version;
 
     // ===== 메서드 =====
 
