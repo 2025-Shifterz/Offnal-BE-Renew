@@ -1,8 +1,8 @@
 package com.offnal.shifterz.domain.organization.domain;
 
-import com.offnal.shifterz.global.BaseTimeEntity;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.work.domain.WorkCalendar;
+import com.offnal.shifterz.global.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

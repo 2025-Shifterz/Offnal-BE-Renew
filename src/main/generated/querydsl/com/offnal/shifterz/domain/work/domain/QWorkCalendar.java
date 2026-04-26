@@ -36,8 +36,6 @@ public class QWorkCalendar extends EntityPathBase<WorkCalendar> {
     //inherited
     public final NumberPath<Long> updatedAt = _super.updatedAt;
 
-    public final NumberPath<Long> version = createNumber("version", Long.class);
-
     public final ListPath<WorkInstance, QWorkInstance> workInstances = this.<WorkInstance, QWorkInstance>createList("workInstances", WorkInstance.class, QWorkInstance.class, PathInits.DIRECT2);
 
     public final MapPath<String, WorkTime, QWorkTime> workTimes = this.<String, WorkTime, QWorkTime>createMap("workTimes", String.class, WorkTime.class, QWorkTime.class);
