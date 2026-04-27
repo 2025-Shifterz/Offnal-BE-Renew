@@ -1,66 +1,65 @@
 package com.offnal.shifterz.global.exception;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.offnal.shifterz.jwt.exception.JwtAuthException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.offnal.shifterz.core.jwt.exception.JwtAuthException;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Override
-    public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         AuthenticationException authException) throws IOException {
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
-        ErrorResponse errorResponse = createErrorResponse(authException);
-        HttpStatus status = determineHttpStatus(authException);
+	@Override
+	public void commence(HttpServletRequest request,
+		HttpServletResponse response,
+		AuthenticationException authException) throws IOException {
 
-        writeErrorResponse(response, errorResponse, status);
-    }
+		ErrorResponse errorResponse = createErrorResponse(authException);
+		HttpStatus status = determineHttpStatus(authException);
 
-    private ErrorResponse createErrorResponse(AuthenticationException authException) {
-        if (authException.getCause() instanceof JwtAuthException jwtAuthException) {
-            return createJwtErrorResponse(jwtAuthException);
-        }
+		writeErrorResponse(response, errorResponse, status);
+	}
 
-        return createDefaultErrorResponse(authException);
-    }
+	private ErrorResponse createErrorResponse(AuthenticationException authException) {
+		if (authException.getCause() instanceof JwtAuthException jwtAuthException) {
+			return ErrorResponse.from(jwtAuthException.getErrorCode());
+		}
 
-    private ErrorResponse createJwtErrorResponse(JwtAuthException jwtAuthException) {
-        ErrorCode errorCode = jwtAuthException.getErrorCode();
-        return ErrorResponse.from(errorCode);
-    }
+		return ErrorResponse.of("인증되지 않은 요청입니다.");
+	}
 
-    private ErrorResponse createDefaultErrorResponse(AuthenticationException authException) {
-        String message = authException.getMessage() != null
-                ? authException.getMessage()
-                : "인증되지 않은 요청입니다.";
+	private HttpStatus determineHttpStatus(AuthenticationException authException) {
+		if (authException.getCause() instanceof JwtAuthException jwtAuthException) {
+			return resolveStatus(jwtAuthException.getErrorCode());
+		}
+		return HttpStatus.UNAUTHORIZED;
+	}
 
-        return ErrorResponse.of("AUTHENTICATION_FAILED", message);
-    }
+	private HttpStatus resolveStatus(CommonErrorCode errorCode) {
+		return switch (errorCode) {
+			case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+			case FORBIDDEN -> HttpStatus.FORBIDDEN;
+			case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+			default -> HttpStatus.BAD_REQUEST;
+		};
+	}
 
-    private HttpStatus determineHttpStatus(AuthenticationException authException) {
-        if (authException.getCause() instanceof JwtAuthException jwtAuthException) {
-            return jwtAuthException.getErrorCode().getHttpStatus();
-        }
-        return HttpStatus.UNAUTHORIZED;
-    }
-
-    private void writeErrorResponse(HttpServletResponse response,
-                                    ErrorResponse errorResponse,
-                                    HttpStatus status) throws IOException {
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.setStatus(status.value());
-        response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
-    }
+	private void writeErrorResponse(HttpServletResponse response,
+		ErrorResponse errorResponse,
+		HttpStatus status) throws IOException {
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		response.setCharacterEncoding("UTF-8");
+		response.setStatus(status.value());
+		response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+	}
 }
