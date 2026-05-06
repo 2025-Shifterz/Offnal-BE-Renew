@@ -10,7 +10,7 @@ import com.offnal.shifterz.core.config.AppleProperties;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.service.AppleSocialService;
-import com.offnal.shifterz.domain.oauth.OAuthHandler;
+import com.offnal.shifterz.domain.oauth.OAuthProvider;
 import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
 import com.offnal.shifterz.global.exception.CustomException;
 import com.offnal.shifterz.global.exception.ErrorReason;
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AppleService implements AppleSocialService {
+public class AppleService implements AppleSocialService, OAuthProvider {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
