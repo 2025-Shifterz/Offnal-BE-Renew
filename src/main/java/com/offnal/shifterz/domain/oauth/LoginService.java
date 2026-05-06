@@ -30,71 +30,42 @@ public class LoginService {
     private final AppleService appleService;
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final OAuthProviderRegistry providerRegistry;
+
 
     public AuthResponseDto loginWithSocial(Provider provider, String code) {
 
-        if (provider == Provider.KAKAO) {
-            String accessToken = kakaoService.getAccessToken(code);
-            KakaoUserInfoResponseDto userInfo = kakaoService.getUserInfo(accessToken);
-            return handleKakaoLogin(userInfo);
-        }
+        providerRegistry.getProvider(provider);
 
-        else {
-            throw new CustomException(LoginErrorCode.UNSUPPORTED_PROVIDER);
-        }
+        String accessToken = kakaoService.getAccessToken(code);
+        KakaoUserInfoResponseDto rawInfo = kakaoService.getUserInfo(accessToken);
+        OAuthUserInfoDto userInfo = kakaoService.toOAuthUserInfoDto(rawInfo);
+
+        return processLogin(provider, userInfo);
     }
 
     public AuthResponseDto loginWithAppleNative(AppleLoginRequest request) {
 
-        AppleUserInfoResponseDto userInfo = appleService.getUserInfoFromIdentityToken(request);
+        AppleUserInfoResponseDto rawInfo = appleService.getUserInfoFromIdentityToken(request);
 
         AppleAuthTokenResponse appleToken =
                 appleService.exchangeAuthorizationCode(request.getAuthorizationCode());
 
-        return handleAppleLogin(userInfo, request, appleToken);
+        OAuthUserInfoDto userInfo = appleService.toOAuthUserInfoDto(request, rawInfo, appleToken.getRefreshToken());
+
+        return processLogin(Provider.APPLE, userInfo);
     }
 
-
-    private AuthResponseDto handleKakaoLogin(KakaoUserInfoResponseDto userInfo) {
+    private AuthResponseDto processLogin(Provider provider, OAuthUserInfoDto userInfo){
         MemberResponseDto.MemberRegisterResponseDto result = memberService.registerMemberIfAbsent(
-                Provider.KAKAO,
-                String.valueOf(userInfo.getId()),
-                userInfo.getKakaoAccount().getEmail(),
-                userInfo.getKakaoAccount().getProfile().getNickName(),
+                provider,
+                userInfo.getProviderId(),
+                userInfo.getEmail(),
+                userInfo.getNickname(),
                 null,
-                userInfo.getKakaoAccount().getProfile().getProfileImageUrl(),
-                null
+                userInfo.getProfileImageUrl(),
+                userInfo.getAppleRefreshToken()
         );
-
-        return issueTokens(result);
-    }
-    private AuthResponseDto handleAppleLogin(
-            AppleUserInfoResponseDto userInfo,
-            AppleLoginRequest request,
-            AppleAuthTokenResponse appleToken
-    ) {
-
-        String nickname = null;
-        if (request.getFullName() != null) {
-            nickname = request.getFullName().getFullName();
-        }
-        if (nickname == null || nickname.isBlank()) {
-            nickname = "Apple User";
-        }
-
-        String email = request.getEmail() != null ? request.getEmail() : userInfo.getEmail();
-
-        MemberResponseDto.MemberRegisterResponseDto result =
-                memberService.registerMemberIfAbsent(
-                        Provider.APPLE,
-                        userInfo.getSub(),
-                        email,
-                        nickname,
-                        null,
-                        null,
-                        appleToken.getRefreshToken()
-                );
-
         return issueTokens(result);
     }
 
@@ -110,20 +81,20 @@ public class LoginService {
         return AuthResponseDto.from(result, jwtAccessToken, jwtRefreshToken);
     }
 
+
     public AuthResponseDto loginWithKakaoNative(KakaoLoginRequest request) {
-        KakaoUserInfoResponseDto userInfo;
         try {
-            userInfo = kakaoService.getUserInfo(request.getAccessToken());
+            KakaoUserInfoResponseDto rawInfo = kakaoService.getUserInfo(request.getAccessToken());
+            OAuthUserInfoDto userInfo = kakaoService.toOAuthUserInfoDto(rawInfo);
+            return processLogin(Provider.KAKAO, userInfo);
         } catch (Exception e) {
             throw new CustomException(LoginErrorCode.INVALID_SOCIAL_TOKEN);
         }
-        return handleKakaoLogin(userInfo);
     }
 
     @Getter
     @AllArgsConstructor
     private enum LoginErrorCode implements ErrorReason {
-        UNSUPPORTED_PROVIDER("AUTH001", HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인 제공자입니다."),
         INVALID_SOCIAL_TOKEN("AUTH002", HttpStatus.UNAUTHORIZED, "유효하지 않은 소셜 액세스 토큰입니다."),
         SOCIAL_USERINFO_FETCH_FAILED("AUTH003", HttpStatus.BAD_REQUEST, "소셜 사용자 정보를 가져오지 못했습니다."),
         MEMBER_SAVE_FAILED("AUTH004", HttpStatus.INTERNAL_SERVER_ERROR, "회원 저장에 실패했습니다.");

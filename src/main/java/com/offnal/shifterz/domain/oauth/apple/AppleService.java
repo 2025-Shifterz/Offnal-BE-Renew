@@ -263,12 +263,26 @@ public class AppleService implements AppleSocialService, OAuthProvider {
                 .build();
     }
 
-    public OAuthUserInfoDto toOAuthUserInfo(AppleUserInfoResponseDto dto, String appleRefreshToken) {
+    public OAuthUserInfoDto toOAuthUserInfoDto(AppleLoginRequest request,
+                                               AppleUserInfoResponseDto dto,
+                                               String appleRefreshToken) {
+        String nickname = resolveNickname(request);
+        String email = request.getEmail() != null ? request.getEmail() : dto.getEmail();
+
         return OAuthUserInfoDto.builder()
                 .providerId(dto.getSub())
-                .email(dto.getEmail())
+                .email(email)
+                .nickname(nickname)
                 .appleRefreshToken(appleRefreshToken)
                 .build();
+    }
+
+    private String resolveNickname(AppleLoginRequest request) {
+        if (request.getFullName() != null) {
+            String name = request.getFullName().getFullName();
+            if (name != null && !name.isBlank()) return name;
+        }
+        return "Apple User";
     }
 
     @Getter

@@ -44,4 +44,9 @@ public class Todo extends BaseTimeEntity {
     //     if (request.getTargetDate() != null) this.targetDate = request.getTargetDate();
     // }
 
+    //마이그레이션 후 삭제
+    public void migrateContent(String encryptedContent) {
+        this.content = encryptedContent;
+    }
+
 }

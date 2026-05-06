@@ -1,11 +1,11 @@
 package com.offnal.shifterz.global.util.encrypt;
 
-import com.offnal.shifterz.member.domain.Member;
-import com.offnal.shifterz.member.repository.MemberRepository;
-import com.offnal.shifterz.memo.domain.Memo;
-import com.offnal.shifterz.memo.repository.MemoRepository;
-import com.offnal.shifterz.todo.domain.Todo;
-import com.offnal.shifterz.todo.repository.TodoRepository;
+import com.offnal.shifterz.domain.member.domain.Member;
+import com.offnal.shifterz.domain.member.repository.MemberRepository;
+import com.offnal.shifterz.domain.memo.domain.Memo;
+import com.offnal.shifterz.domain.memo.repository.MemoRepository;
+import com.offnal.shifterz.domain.todo.domain.Todo;
+import com.offnal.shifterz.domain.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

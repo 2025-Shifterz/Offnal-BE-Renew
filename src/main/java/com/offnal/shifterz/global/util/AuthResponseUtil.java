@@ -3,7 +3,6 @@ package com.offnal.shifterz.global.util;
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.global.response.SuccessCode;
 import com.offnal.shifterz.global.response.SuccessResponse;
-import com.offnal.shifterz.member.dto.AuthResponseDto;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
