@@ -32,18 +32,6 @@ public class LoginService {
     private final JwtTokenProvider jwtTokenProvider;
     private final OAuthProviderRegistry providerRegistry;
 
-
-    public AuthResponseDto loginWithSocial(Provider provider, String code) {
-
-        providerRegistry.getProvider(provider);
-
-        String accessToken = kakaoService.getAccessToken(code);
-        KakaoUserInfoResponseDto rawInfo = kakaoService.getUserInfo(accessToken);
-        OAuthUserInfoDto userInfo = kakaoService.toOAuthUserInfoDto(rawInfo);
-
-        return processLogin(provider, userInfo);
-    }
-
     public AuthResponseDto loginWithAppleNative(AppleLoginRequest request) {
 
         AppleUserInfoResponseDto rawInfo = appleService.getUserInfoFromIdentityToken(request);

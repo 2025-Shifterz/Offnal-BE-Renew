@@ -79,12 +79,4 @@ public class KakaoService implements SocialService<KakaoUserInfoResponseDto>, OA
 
         return userInfo;
     }
-
-    public KakaoLoginPageResponse getKakaoAuthorizationUrl() {
-        String url = String.format(
-                "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=%s&redirect_uri=%s",
-                kakaoProperties.clientId(),
-                kakaoProperties.redirectUri());
-        return new KakaoLoginPageResponse(url);
-    }
 }
