@@ -5,11 +5,10 @@ import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.domain.member.dto.MemberResponseDto;
 import com.offnal.shifterz.domain.member.service.MemberService;
-import com.offnal.shifterz.domain.oauth.apple.AppleAuthTokenResponse;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
-import com.offnal.shifterz.domain.oauth.apple.AppleService;
-import com.offnal.shifterz.domain.oauth.apple.AppleUserInfoResponseDto;
+import com.offnal.shifterz.domain.oauth.apple.*;
+import com.offnal.shifterz.domain.oauth.exception.OAuthErrorCode;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoOAuthHandler;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoService;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoUserInfoResponseDto;
 import com.offnal.shifterz.global.exception.CustomException;
@@ -26,21 +25,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginService {
 
-    private final KakaoService kakaoService;
-    private final AppleService appleService;
+    private final KakaoOAuthHandler kakaoOAuthHandler;
+    private final AppleOAuthHandler appleOAuthHandler;
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final OAuthProviderRegistry providerRegistry;
 
     public AuthResponseDto loginWithAppleNative(AppleLoginRequest request) {
 
-        AppleUserInfoResponseDto rawInfo = appleService.getUserInfoFromIdentityToken(request);
-
-        AppleAuthTokenResponse appleToken =
-                appleService.exchangeAuthorizationCode(request.getAuthorizationCode());
-
-        OAuthUserInfoDto userInfo = appleService.toOAuthUserInfoDto(request, rawInfo, appleToken.getRefreshToken());
-
+        OAuthUserInfoDto userInfo = appleOAuthHandler.getUserInfo(request, null);
         return processLogin(Provider.APPLE, userInfo);
     }
 
@@ -62,21 +54,18 @@ public class LoginService {
         if (result.getId() == null) {
             throw new CustomException(MemberService.MemberErrorCode.MEMBER_SAVE_FAILED);
         }
-
         String jwtAccessToken = jwtTokenProvider.createToken(result.getId());
         String jwtRefreshToken = jwtTokenProvider.createRefreshToken(result.getId());
-
         return AuthResponseDto.from(result, jwtAccessToken, jwtRefreshToken);
     }
 
 
     public AuthResponseDto loginWithKakaoNative(KakaoLoginRequest request) {
         try {
-            KakaoUserInfoResponseDto rawInfo = kakaoService.getUserInfo(request.getAccessToken());
-            OAuthUserInfoDto userInfo = kakaoService.toOAuthUserInfoDto(rawInfo);
+            OAuthUserInfoDto userInfo = kakaoOAuthHandler.getUserInfo(request.getAccessToken());
             return processLogin(Provider.KAKAO, userInfo);
         } catch (Exception e) {
-            throw new CustomException(LoginErrorCode.INVALID_SOCIAL_TOKEN);
+            throw new CustomException(OAuthErrorCode.INVALID_SOCIAL_TOKEN);
         }
     }
 

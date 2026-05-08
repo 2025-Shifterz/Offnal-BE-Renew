@@ -3,7 +3,7 @@ package com.offnal.shifterz.domain.oauth.kakao;
 import com.offnal.shifterz.core.config.KakaoProperties;
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.service.SocialService;
-import com.offnal.shifterz.domain.oauth.OAuthProvider;
+import com.offnal.shifterz.domain.oauth.OAuthHandler;
 import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
 import com.offnal.shifterz.domain.oauth.TokenResponseDto;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -18,25 +18,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class KakaoService implements SocialService<KakaoUserInfoResponseDto>, OAuthProvider {
+public class KakaoService implements SocialService<KakaoUserInfoResponseDto> {
     private final KakaoProperties kakaoProperties;
-
-    @Override
-    public Provider getProviderType(){
-        return Provider.KAKAO;
-    }
-
-    @Override
-    public OAuthUserInfoDto toOAuthUserInfoDto(Object rawUserInfoDto) {
-        KakaoUserInfoResponseDto dto = (KakaoUserInfoResponseDto) rawUserInfoDto;
-
-        return OAuthUserInfoDto.builder()
-                .providerId(String.valueOf(dto.getId()))
-                .email(dto.getKakaoAccount().getEmail())
-                .nickname(dto.getKakaoAccount().getProfile().getNickName())
-                .profileImageUrl(dto.getKakaoAccount().getProfile().getProfileImageUrl())
-                .build();
-    }
 
     @Override
     public String getAccessToken(String code) {

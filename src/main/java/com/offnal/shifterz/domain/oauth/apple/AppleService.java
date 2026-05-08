@@ -10,7 +10,7 @@ import com.offnal.shifterz.core.config.AppleProperties;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.service.AppleSocialService;
-import com.offnal.shifterz.domain.oauth.OAuthProvider;
+import com.offnal.shifterz.domain.oauth.OAuthHandler;
 import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
 import com.offnal.shifterz.global.exception.CustomException;
 import com.offnal.shifterz.global.exception.ErrorReason;
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AppleService implements AppleSocialService, OAuthProvider {
+public class AppleService implements AppleSocialService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -247,42 +247,6 @@ public class AppleService implements AppleSocialService, OAuthProvider {
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new CustomException(AppleErrorCode.APPLE_REVOKE_FAIL);
         }
-    }
-
-    @Override
-    public Provider getProviderType() {
-        return Provider.APPLE;
-    }
-
-    @Override
-    public OAuthUserInfoDto toOAuthUserInfoDto(Object rawUserInfoDto) {
-        AppleUserInfoResponseDto dto = (AppleUserInfoResponseDto) rawUserInfoDto;
-        return OAuthUserInfoDto.builder()
-                .providerId(dto.getSub())
-                .email(dto.getEmail())
-                .build();
-    }
-
-    public OAuthUserInfoDto toOAuthUserInfoDto(AppleLoginRequest request,
-                                               AppleUserInfoResponseDto dto,
-                                               String appleRefreshToken) {
-        String nickname = resolveNickname(request);
-        String email = request.getEmail() != null ? request.getEmail() : dto.getEmail();
-
-        return OAuthUserInfoDto.builder()
-                .providerId(dto.getSub())
-                .email(email)
-                .nickname(nickname)
-                .appleRefreshToken(appleRefreshToken)
-                .build();
-    }
-
-    private String resolveNickname(AppleLoginRequest request) {
-        if (request.getFullName() != null) {
-            String name = request.getFullName().getFullName();
-            if (name != null && !name.isBlank()) return name;
-        }
-        return "Apple User";
     }
 
     @Getter

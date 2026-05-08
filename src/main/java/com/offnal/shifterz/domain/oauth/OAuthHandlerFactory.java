@@ -14,16 +14,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class OAuthProviderRegistry {
-    private final Map<Provider, OAuthProvider> providerMap;
+public class OAuthHandlerFactory {
+    private final Map<Provider, OAuthHandler> providerMap;
 
-    public OAuthProviderRegistry(List<OAuthProvider> providers) {
+    public OAuthHandlerFactory(List<OAuthHandler> providers) {
         this.providerMap = providers.stream()
-                .collect(Collectors.toMap(OAuthProvider::getProviderType, Function.identity()));
+                .collect(Collectors.toMap(OAuthHandler::getProviderType, Function.identity()));
     }
 
-    public OAuthProvider getProvider(Provider type) {
-        OAuthProvider provider = providerMap.get(type);
+    public OAuthHandler getProvider(Provider type) {
+        OAuthHandler provider = providerMap.get(type);
         if(provider == null){
             throw new CustomException(RegistryErrorCode.UNSUPPORTED_PROVIDER);
         }
