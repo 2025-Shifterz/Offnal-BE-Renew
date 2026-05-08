@@ -1,5 +1,7 @@
 package com.offnal.shifterz.global.exception;
 
+import static com.offnal.shifterz.global.exception.ErrorCode.*;
+
 import java.io.IOException;
 
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.offnal.shifterz.core.jwt.exception.JwtAuthException;
+import com.offnal.shifterz.core.jwt.exception.TokenErrorCode;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,18 +43,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
 	private HttpStatus determineHttpStatus(AuthenticationException authException) {
 		if (authException.getCause() instanceof JwtAuthException jwtAuthException) {
-			return resolveStatus(jwtAuthException.getErrorCode());
+			return ErrorStatusResolver.resolve(jwtAuthException.getErrorCode());
 		}
 		return HttpStatus.UNAUTHORIZED;
-	}
-
-	private HttpStatus resolveStatus(CommonErrorCode errorCode) {
-		return switch (errorCode) {
-			case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-			case FORBIDDEN -> HttpStatus.FORBIDDEN;
-			case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-			default -> HttpStatus.BAD_REQUEST;
-		};
 	}
 
 	private void writeErrorResponse(HttpServletResponse response,

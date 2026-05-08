@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
         }
 
         return ResponseEntity
-            .status(resolveStatus(errorCode))
+            .status(ErrorStatusResolver.resolve(errorCode))
             .body(ErrorResponse.from(errorCode));
     }
 
@@ -75,22 +75,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ErrorResponse.from(CommonErrorCode.INTERNAL_SERVER_ERROR));
-    }
-
-    private HttpStatus resolveStatus(ErrorCode errorCode) {
-        if (errorCode instanceof CommonErrorCode commonErrorCode) {
-            return switch (commonErrorCode) {
-                case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
-                case FORBIDDEN -> HttpStatus.FORBIDDEN;
-                case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
-                default -> HttpStatus.BAD_REQUEST;
-            };
-        }
-
-        if (errorCode instanceof TokenErrorCode) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-
-        return HttpStatus.BAD_REQUEST;
     }
 }
