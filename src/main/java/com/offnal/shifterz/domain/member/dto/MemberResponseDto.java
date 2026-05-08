@@ -1,5 +1,7 @@
 package com.offnal.shifterz.domain.member.dto;
 
+import com.offnal.shifterz.domain.member.domain.Member;
+import com.offnal.shifterz.global.util.encrypt.EncryptUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +21,17 @@ public class MemberResponseDto {
         private String phoneNumber;
         private String profileImageKey;
         private boolean isNewMember;
+
+        public static MemberRegisterResponseDto from(Member member, boolean isNewMember, EncryptUtil encryptUtil) {
+            return MemberRegisterResponseDto.builder()
+                    .id(member.getId())
+                    .email(encryptUtil.decryptAESOrNull(member.getEmail()))
+                    .memberName(encryptUtil.decryptAESOrNull(member.getMemberName()))
+                    .phoneNumber(encryptUtil.decryptAESOrNull(member.getPhoneNumber()))
+                    .profileImageKey(member.getProfileImageKey())
+                    .isNewMember(isNewMember)
+                    .build();
+        }
     }
 
     @Data
@@ -45,6 +58,17 @@ public class MemberResponseDto {
         @Schema(example = "https://bucket.s3.ap-northeast-2.amazonaws.com/profile/...",
                 description = "S3 presigned 조회 URL (10분 유효)")
         private String profileImageUrl;
+
+        public static MemberUpdateResponseDto from(Member member, String profileImageUrl, EncryptUtil encryptUtil) {
+            return MemberUpdateResponseDto.builder()
+                    .id(member.getId())
+                    .email(encryptUtil.decryptAESOrNull(member.getEmail()))
+                    .memberName(encryptUtil.decryptAESOrNull(member.getMemberName()))
+                    .phoneNumber(encryptUtil.decryptAESOrNull(member.getPhoneNumber()))
+                    .profileImageKey(member.getProfileImageKey())
+                    .profileImageUrl(profileImageUrl)
+                    .build();
+        }
     }
 
 }

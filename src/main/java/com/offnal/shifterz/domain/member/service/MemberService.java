@@ -3,7 +3,6 @@ package com.offnal.shifterz.domain.member.service;
 import com.offnal.shifterz.core.jwt.TokenService;
 import com.offnal.shifterz.domain.log.domain.Log;
 import com.offnal.shifterz.domain.log.repository.LogRepository;
-import com.offnal.shifterz.domain.member.converter.MemberConverter;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.MemberRequestDto;
@@ -84,7 +83,7 @@ public class MemberService {
                 member.updateAppleRefreshToken(encryptUtil.encryptAESOrNull(appleRefreshToken)); // ✅
             }
 
-            return MemberConverter.toRegisterResponse(member, false, encryptUtil);
+            return MemberResponseDto.MemberRegisterResponseDto.from(member, false, encryptUtil);
         }
 
         // 신규 회원 생성
@@ -108,7 +107,7 @@ public class MemberService {
             uploadSocialProfileImage(savedMember, socialProfileImageUrl);
         }
 
-        return MemberConverter.toRegisterResponse(savedMember, true, encryptUtil);
+        return MemberResponseDto.MemberRegisterResponseDto.from(savedMember, true, encryptUtil);
 
     }
 
@@ -164,7 +163,7 @@ public class MemberService {
             presignedUrl = s3Service.generateViewPresignedUrl(key);
         }
 
-        return MemberConverter.toMyInfoResponse(member, presignedUrl, encryptUtil);
+        return MemberResponseDto.MemberUpdateResponseDto.from(member, presignedUrl, encryptUtil);
     }
 
     /**
@@ -243,8 +242,7 @@ public class MemberService {
             presignedUrl = s3Service.generateViewPresignedUrl(key);
         }
 
-        return MemberConverter.toMyInfoResponse(member, presignedUrl, encryptUtil);
-
+        return MemberResponseDto.MemberUpdateResponseDto.from(member, presignedUrl, encryptUtil);
     }
 
     /**
