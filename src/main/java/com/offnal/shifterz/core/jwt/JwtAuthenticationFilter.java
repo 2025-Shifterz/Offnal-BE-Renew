@@ -1,14 +1,17 @@
 package com.offnal.shifterz.core.jwt;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.offnal.shifterz.core.jwt.exception.JwtAuthException;
+import com.offnal.shifterz.core.jwt.exception.TokenErrorCode;
 import com.offnal.shifterz.global.exception.CustomAuthenticationEntryPoint;
 
 import jakarta.servlet.FilterChain;
@@ -25,7 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final TokenService tokenService;
-	private final CustomUserDetailsService customUserDetailsService;
 	private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
 	@Override
@@ -38,35 +40,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		String token = jwtTokenProvider.resolveToken(request);
 
 		if (token != null) {
-			if (!jwtTokenProvider.validateToken(token) || tokenService.isBlacklisted(token)) {
-				handleAuthError(request, response);
+			try {
+				// 1. 토큰 유효성 검증
+				if (!jwtTokenProvider.validateToken(token)) {
+					throw new JwtAuthException(TokenErrorCode.INVALID_TOKEN);
+				}
+
+				// 2. 로그아웃된 토큰인지 확인
+				if (tokenService.isBlacklisted(token)) {
+					throw new JwtAuthException(TokenErrorCode.LOGOUT_TOKEN);
+				}
+
+				// 3. 인증 객체 생성 - DB 조회 없이 토큰 클레임만으로 생성
+				Long memberId = jwtTokenProvider.getMemberId(token);
+
+				SecurityContextHolder.getContext().setAuthentication(
+					new UsernamePasswordAuthenticationToken(
+						memberId,
+						null,
+						List.of(new SimpleGrantedAuthority("ROLE_USER"))
+					)
+				);
+
+			} catch (JwtAuthException e) {
+				SecurityContextHolder.clearContext();
+				authenticationEntryPoint.commence(
+					request,
+					response,
+					new AuthenticationException(e.getMessage()) {}
+				);
 				return;
 			}
-
-			Long memberId = jwtTokenProvider.getMemberId(token);
-			CustomUserDetails userDetails = customUserDetailsService.loadByMemberId(memberId);
-
-			Authentication authentication = new UsernamePasswordAuthenticationToken(
-				userDetails,
-				null,
-				userDetails.getAuthorities()
-			);
-
-			SecurityContextHolder.getContext().setAuthentication(authentication);
 		}
 
 		filterChain.doFilter(request, response);
-	}
-
-	private void handleAuthError(
-		HttpServletRequest request,
-		HttpServletResponse response
-	) throws IOException, ServletException {
-		authenticationEntryPoint.commence(
-			request,
-			response,
-			new AuthenticationException("유효하지 않은 토큰입니다.") {
-			}
-		);
 	}
 }

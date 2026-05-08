@@ -43,7 +43,6 @@ public class JwtTokenProvider {
 
 	private String createToken(Long memberId, long validitySeconds) {
 		Date now = new Date();
-
 		return Jwts.builder()
 			.setSubject(String.valueOf(memberId))
 			.setIssuedAt(now)
@@ -53,16 +52,14 @@ public class JwtTokenProvider {
 	}
 
 	public Long getMemberId(String token) {
-		Claims claims = parseClaims(token);
-		return Long.parseLong(claims.getSubject());
+		return Long.parseLong(parseClaims(token).getSubject());
 	}
 
+	// void → boolean 반환으로 변경 (TokenService, Filter 모두 일관되게 사용)
 	public boolean validateToken(String token) {
 		try {
 			parseClaims(token);
 			return true;
-		} catch (ExpiredJwtException e) {
-			return false;
 		} catch (JwtException | IllegalArgumentException e) {
 			return false;
 		}
@@ -70,19 +67,15 @@ public class JwtTokenProvider {
 
 	public String resolveToken(HttpServletRequest request) {
 		String bearerToken = request.getHeader("Authorization");
-
 		if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
 			return bearerToken.substring(7);
 		}
-
 		return null;
 	}
 
 	public long getExpiration(String token) {
 		try {
-			Claims claims = parseClaims(token);
-			long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
-
+			long remaining = parseClaims(token).getExpiration().getTime() - System.currentTimeMillis();
 			return Math.max(remaining, 0L);
 		} catch (ExpiredJwtException e) {
 			return 0L;
