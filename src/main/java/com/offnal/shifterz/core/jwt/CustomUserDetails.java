@@ -26,15 +26,15 @@ public class CustomUserDetails implements UserDetails {
 		);
 	}
 
-	@Override
-	public String getPassword() {
-		return null;
-	}
+    @Override
+    public String getPassword() {
+        return null;
+    }
 
-	@Override
-	public String getUsername() {
-		return username;
-	}
+    @Override
+    public String getUsername() {
+        return username;
+    }
 
 	@Override
 	public boolean isAccountNonExpired() {
