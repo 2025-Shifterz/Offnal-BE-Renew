@@ -59,14 +59,12 @@ public class TokenService {
 		Long memberId = jwtTokenProvider.getMemberId(accessToken);
 		refreshTokenRepository.delete(memberId);
 
-		// logout 내부에서는 이미 검증 완료 → 중복 검증 없이 직접 처리
 		long expiration = jwtTokenProvider.getExpiration(accessToken);
 		if (expiration > 0) {
 			redisUtil.setBlackList(accessToken, expiration, TimeUnit.MILLISECONDS);
 		}
 	}
 
-	// 외부에서 직접 호출될 수 있으므로 자체 검증 유지
 	public void blacklistAccessToken(String accessToken) {
 		if (accessToken == null || accessToken.isBlank()) {
 			throw new CustomException(TokenErrorCode.INVALID_TOKEN);

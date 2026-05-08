@@ -22,8 +22,6 @@ public class CustomUserDetails implements UserDetails {
 	public CustomUserDetails(Member member) {
 		this.member = member;
 		this.id = member.getId();
-
-		// Spring Security에서 식별자로 사용할 값
 		this.username = String.valueOf(member.getId());
 
 		this.authorities = Collections.singletonList(
