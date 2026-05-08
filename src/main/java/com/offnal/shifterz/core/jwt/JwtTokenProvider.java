@@ -55,7 +55,6 @@ public class JwtTokenProvider {
 		return Long.parseLong(parseClaims(token).getSubject());
 	}
 
-	// void → boolean 반환으로 변경 (TokenService, Filter 모두 일관되게 사용)
 	public boolean validateToken(String token) {
 		try {
 			parseClaims(token);

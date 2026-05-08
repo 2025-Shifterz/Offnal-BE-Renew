@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 					throw new JwtAuthException(TokenErrorCode.LOGOUT_TOKEN);
 				}
 
-				// 3. 인증 객체 생성 - DB 조회 없이 토큰 클레임만으로 생성
+				// 3. 인증 객체 생성
 				Long memberId = jwtTokenProvider.getMemberId(token);
 
 				SecurityContextHolder.getContext().setAuthentication(
