@@ -61,7 +61,7 @@ class MemberRepositoryTest {
         saveMember(Provider.KAKAO, "12345678");
 
         // when
-        Optional<Member> result = memberRepository.findByProviderAndProviderId(Provider.GOOGLE, "12345678");
+        Optional<Member> result = memberRepository.findByProviderAndProviderId(Provider.APPLE, "12345678");
 
         // then
         assertThat(result).isEmpty();
