@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
-public class KakaoLoginRequest {
+public class KakaoLoginRequestDto {
     @NotBlank(message = "accessToken은 필수입니다.")
     @Schema(description = "Kakao에서 받은 accessToken")
     private String accessToken;

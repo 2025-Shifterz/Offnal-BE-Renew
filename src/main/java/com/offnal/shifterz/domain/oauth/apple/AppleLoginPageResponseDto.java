@@ -5,6 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class AppleLoginPageResponse {
+public class AppleLoginPageResponseDto {
     private String url;
 }

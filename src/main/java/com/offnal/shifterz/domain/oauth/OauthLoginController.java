@@ -2,8 +2,8 @@ package com.offnal.shifterz.domain.oauth;
 
 
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
+import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
 import com.offnal.shifterz.global.exception.ErrorApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -82,7 +82,7 @@ public class OauthLoginController {
     @ErrorApiResponses.AppleLoginError
     @PostMapping("/login/apple")
     public ResponseEntity<AuthResponseDto> appleNativeLogin(
-            @RequestBody AppleLoginRequest request
+            @RequestBody AppleLoginRequestDto request
     ) {
         AuthResponseDto response = loginService.loginWithAppleNative(request);
         return ResponseEntity.ok(response);
@@ -96,7 +96,7 @@ public class OauthLoginController {
     )
     @PostMapping("/login/kakao")
     public ResponseEntity<AuthResponseDto> kakaoNativeLogin(
-            @RequestBody @Valid KakaoLoginRequest request
+            @RequestBody @Valid KakaoLoginRequestDto request
     ){
         AuthResponseDto response = loginService.loginWithKakaoNative(request);
         return ResponseEntity.ok(response);

@@ -25,9 +25,9 @@ public class AppleOAuthHandler implements OAuthHandler {
                 .build();
     }
 
-    public OAuthUserInfoDto getUserInfo(AppleLoginRequest request, String appleRefreshToken) {
+    public OAuthUserInfoDto getUserInfo(AppleLoginRequestDto request, String appleRefreshToken) {
         AppleUserInfoResponseDto rawInfo = appleService.getUserInfoFromIdentityToken(request);
-        AppleAuthTokenResponse token = appleService.exchangeAuthorizationCode(request.getAuthorizationCode());
+        AppleAuthTokenResponseDto token = appleService.exchangeAuthorizationCode(request.getAuthorizationCode());
 
         return OAuthUserInfoDto.builder()
                 .providerId(rawInfo.getSub())
@@ -37,7 +37,7 @@ public class AppleOAuthHandler implements OAuthHandler {
                 .build();
     }
 
-    private String resolveNickname(AppleLoginRequest request) {
+    private String resolveNickname(AppleLoginRequestDto request) {
         if (request.getFullName() != null) {
             String name = request.getFullName().getFullName();
             if (name != null && !name.isBlank()) return name;

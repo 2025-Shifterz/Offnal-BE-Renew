@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class AppleLoginRequest {
+public class AppleLoginRequestDto {
 
     @Schema(description = "iOS 네이티브 로그인에서 받은 identityToken(JWT)", required = true)
     private String identityToken;

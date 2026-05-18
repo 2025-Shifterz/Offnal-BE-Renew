@@ -9,7 +9,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -29,10 +28,10 @@ class AppleOAuthHandlerTest {
     @Test
     void fullName이_있으면_nickname으로_사용한다() {
         // given
-        AppleLoginRequest request = mock(AppleLoginRequest.class);
-        AppleLoginRequest.FullName fullName = mock(AppleLoginRequest.FullName.class);
+        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
+        AppleLoginRequestDto.FullName fullName = mock(AppleLoginRequestDto.FullName.class);
         AppleUserInfoResponseDto rawInfo = new AppleUserInfoResponseDto("apple-sub-123", "apple@test.com");
-        AppleAuthTokenResponse token = mock(AppleAuthTokenResponse.class);
+        AppleAuthTokenResponseDto token = mock(AppleAuthTokenResponseDto.class);
 
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn("apple@test.com");
@@ -53,9 +52,9 @@ class AppleOAuthHandlerTest {
     @Test
     void fullName이_null이면_기본값_AppleUser를_사용한다() {
         // given
-        AppleLoginRequest request = mock(AppleLoginRequest.class);
+        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
         AppleUserInfoResponseDto rawInfo = new AppleUserInfoResponseDto("apple-sub-123", "apple@test.com");
-        AppleAuthTokenResponse token = mock(AppleAuthTokenResponse.class);
+        AppleAuthTokenResponseDto token = mock(AppleAuthTokenResponseDto.class);
 
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn("apple@test.com");
@@ -74,9 +73,9 @@ class AppleOAuthHandlerTest {
     @Test
     void request_email이_null이면_identityToken의_email을_사용한다() {
         // given
-        AppleLoginRequest request = mock(AppleLoginRequest.class);
+        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
         AppleUserInfoResponseDto rawInfo = new AppleUserInfoResponseDto("apple-sub-123", "from-token@test.com");
-        AppleAuthTokenResponse token = mock(AppleAuthTokenResponse.class);
+        AppleAuthTokenResponseDto token = mock(AppleAuthTokenResponseDto.class);
 
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn(null);

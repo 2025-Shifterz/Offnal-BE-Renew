@@ -8,7 +8,7 @@ import com.offnal.shifterz.domain.member.exception.MemberErrorCode;
 import com.offnal.shifterz.domain.member.service.MemberService;
 import com.offnal.shifterz.domain.oauth.apple.*;
 import com.offnal.shifterz.domain.oauth.exception.OAuthErrorCode;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoOAuthHandler;
 import com.offnal.shifterz.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class LoginService {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthResponseDto loginWithAppleNative(AppleLoginRequest request) {
+    public AuthResponseDto loginWithAppleNative(AppleLoginRequestDto request) {
 
         OAuthUserInfoDto userInfo = appleOAuthHandler.getUserInfo(request, null);
         return processLogin(Provider.APPLE, userInfo);
@@ -55,7 +55,7 @@ public class LoginService {
     }
 
 
-    public AuthResponseDto loginWithKakaoNative(KakaoLoginRequest request) {
+    public AuthResponseDto loginWithKakaoNative(KakaoLoginRequestDto request) {
         try {
             OAuthUserInfoDto userInfo = kakaoOAuthHandler.getUserInfo(request.getAccessToken());
             return processLogin(Provider.KAKAO, userInfo);
@@ -63,5 +63,4 @@ public class LoginService {
             throw new CustomException(OAuthErrorCode.INVALID_SOCIAL_TOKEN);
         }
     }
-
 }

@@ -5,9 +5,9 @@ import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.domain.member.dto.MemberResponseDto;
 import com.offnal.shifterz.domain.member.service.MemberService;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
+import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
 import com.offnal.shifterz.domain.oauth.apple.AppleOAuthHandler;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoOAuthHandler;
 import com.offnal.shifterz.global.exception.CustomException;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -39,7 +38,7 @@ class LoginServiceTest {
     @Test
     void 카카오_네이티브_로그인_성공() {
         // given
-        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
         given(request.getAccessToken()).willReturn("kakao-access-token");
 
         OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
@@ -67,7 +66,7 @@ class LoginServiceTest {
     @Test
     void 유효하지_않은_카카오_토큰이면_CustomException이_발생한다() {
         // given
-        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
         given(request.getAccessToken()).willReturn("invalid-token");
         given(kakaoOAuthHandler.getUserInfo("invalid-token")).willThrow(new RuntimeException());
 
@@ -79,7 +78,7 @@ class LoginServiceTest {
     @Test
     void 애플_네이티브_로그인_성공() {
         // given
-        AppleLoginRequest request = mock(AppleLoginRequest.class);
+        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
 
         OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
                 .providerId("apple-sub").email("apple@test.com")

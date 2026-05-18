@@ -8,15 +8,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.offnal.shifterz.core.config.AppleProperties;
 import com.offnal.shifterz.domain.member.domain.Member;
-import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.service.AppleSocialService;
-import com.offnal.shifterz.domain.oauth.OAuthProvider;
-import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
 import com.offnal.shifterz.domain.oauth.apple.exception.AppleErrorCode;
 import com.offnal.shifterz.global.exception.CustomException;
-import com.offnal.shifterz.global.exception.ErrorCode;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ResourceLoader;
@@ -63,7 +57,7 @@ public class AppleService implements AppleSocialService{
 
 
     @Override
-    public AppleUserInfoResponseDto getUserInfoFromIdentityToken(AppleLoginRequest request) {
+    public AppleUserInfoResponseDto getUserInfoFromIdentityToken(AppleLoginRequestDto request) {
 
         DecodedJWT jwt = verifyIdentityToken(request.getIdentityToken());
 
@@ -142,7 +136,7 @@ public class AppleService implements AppleSocialService{
 
 
 
-    public AppleAuthTokenResponse exchangeAuthorizationCode(String authorizationCode) {
+    public AppleAuthTokenResponseDto exchangeAuthorizationCode(String authorizationCode) {
 
         String clientSecret = createClientSecret();
 
@@ -170,9 +164,9 @@ public class AppleService implements AppleSocialService{
 
         // JSON → DTO 매핑
         try {
-            AppleAuthTokenResponse token = objectMapper.readValue(
+            AppleAuthTokenResponseDto token = objectMapper.readValue(
                     rawResponse.getBody(),
-                    AppleAuthTokenResponse.class
+                    AppleAuthTokenResponseDto.class
             );
 
             return token;
@@ -250,19 +244,4 @@ public class AppleService implements AppleSocialService{
         }
     }
 
-    @Getter
-    @AllArgsConstructor
-    public enum AppleErrorCode implements ErrorCode {
-
-        APPLE_TOKEN_INVALID("APL001", HttpStatus.UNAUTHORIZED, "유효하지 않은 Apple identity token입니다."),
-        APPLE_PUBLIC_KEY_NOT_FOUND("APL002", HttpStatus.INTERNAL_SERVER_ERROR, "kid에 해당하는 Apple 공개키를 찾을 수 없습니다."),
-        APPLE_PUBLIC_KEY_ERROR("APL003", HttpStatus.INTERNAL_SERVER_ERROR, "Apple 공개키 처리 중 오류가 발생했습니다."),
-        APPLE_TOKEN_EXCHANGE_FAIL("APL004", HttpStatus.BAD_GATEWAY, "authorization_code 토큰 교환 실패"),
-        APPLE_CLIENT_SECRET_ERROR("APL005", HttpStatus.INTERNAL_SERVER_ERROR, "client secret 생성 실패"),
-        APPLE_REVOKE_FAIL("APL006", HttpStatus.BAD_GATEWAY, "Apple 토큰 revoke 실패");
-
-        private final String code;
-        private final HttpStatus status;
-        private final String message;
-    }
 }
