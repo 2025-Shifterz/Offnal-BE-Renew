@@ -7,7 +7,7 @@ import java.util.Date;
 import org.springframework.stereotype.Component;
 
 import com.offnal.shifterz.core.config.JwtProperties;
-import com.offnal.shifterz.global.exception.CommonErrorCode;
+import com.offnal.shifterz.global.exception.code.CommonErrorCode;
 import com.offnal.shifterz.global.exception.CustomException;
 
 import io.jsonwebtoken.Claims;

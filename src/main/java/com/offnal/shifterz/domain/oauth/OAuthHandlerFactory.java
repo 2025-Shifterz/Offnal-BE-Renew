@@ -1,8 +1,8 @@
 package com.offnal.shifterz.domain.oauth;
 
 import com.offnal.shifterz.domain.member.domain.Provider;
+import com.offnal.shifterz.domain.oauth.exception.OAuthErrorCode;
 import com.offnal.shifterz.global.exception.CustomException;
-import com.offnal.shifterz.global.exception.ErrorReason;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -25,18 +25,8 @@ public class OAuthHandlerFactory {
     public OAuthHandler getProvider(Provider type) {
         OAuthHandler provider = providerMap.get(type);
         if(provider == null){
-            throw new CustomException(RegistryErrorCode.UNSUPPORTED_PROVIDER);
+            throw new CustomException(OAuthErrorCode.UNSUPPORTED_PROVIDER);
         }
         return provider;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public enum RegistryErrorCode implements ErrorReason {
-        UNSUPPORTED_PROVIDER("AUTH001", HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인 제공자입니다.");
-
-        private final String code;
-        private final HttpStatus status;
-        private final String message;
     }
 }

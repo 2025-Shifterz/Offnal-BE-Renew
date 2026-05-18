@@ -5,6 +5,7 @@ import com.offnal.shifterz.core.jwt.CustomUserDetails;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.global.exception.CustomException;
 import com.offnal.shifterz.global.exception.ErrorCode;
+import com.offnal.shifterz.global.exception.code.CommonErrorCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -14,7 +15,7 @@ public class AuthService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
+            throw new CustomException(CommonErrorCode.UNAUTHORIZED);
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -25,7 +26,7 @@ public class AuthService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED);
+            throw new CustomException(CommonErrorCode.UNAUTHORIZED);
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();

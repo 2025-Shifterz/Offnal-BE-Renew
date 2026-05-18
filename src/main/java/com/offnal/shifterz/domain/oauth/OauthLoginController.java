@@ -5,13 +5,12 @@ import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
 import com.offnal.shifterz.global.exception.ErrorApiResponses;
-import com.offnal.shifterz.global.response.SuccessCode;
-import com.offnal.shifterz.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,11 +81,11 @@ public class OauthLoginController {
 
     @ErrorApiResponses.AppleLoginError
     @PostMapping("/login/apple")
-    public SuccessResponse<AuthResponseDto> appleNativeLogin(
+    public ResponseEntity<AuthResponseDto> appleNativeLogin(
             @RequestBody AppleLoginRequest request
     ) {
         AuthResponseDto response = loginService.loginWithAppleNative(request);
-        return SuccessResponse.success(SuccessCode.LOGIN_SUCCESS, response);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -96,11 +95,11 @@ public class OauthLoginController {
                     """
     )
     @PostMapping("/login/kakao")
-    public SuccessResponse<AuthResponseDto> kakaoNativeLogin(
+    public ResponseEntity<AuthResponseDto> kakaoNativeLogin(
             @RequestBody @Valid KakaoLoginRequest request
     ){
         AuthResponseDto response = loginService.loginWithKakaoNative(request);
-        return SuccessResponse.success(SuccessCode.LOGIN_SUCCESS, response);
+        return ResponseEntity.ok(response);
     }
 }
 

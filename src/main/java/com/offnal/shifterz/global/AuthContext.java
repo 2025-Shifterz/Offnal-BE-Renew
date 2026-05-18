@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.offnal.shifterz.core.jwt.CustomUserDetails;
 import com.offnal.shifterz.domain.member.domain.Member;
-import com.offnal.shifterz.global.exception.CommonErrorCode;
+import com.offnal.shifterz.global.exception.code.CommonErrorCode;
 import com.offnal.shifterz.global.exception.CustomException;
 
 @Component

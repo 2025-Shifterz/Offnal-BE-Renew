@@ -52,7 +52,7 @@ class LoginServiceTest {
         given(kakaoOAuthHandler.getUserInfo("kakao-access-token")).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
-        given(jwtTokenProvider.createToken(1L)).willReturn("access-token");
+        given(jwtTokenProvider.createAccessToken(1L)).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(1L)).willReturn("refresh-token");
 
         // when
@@ -92,7 +92,7 @@ class LoginServiceTest {
         given(appleOAuthHandler.getUserInfo(request, null)).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
-        given(jwtTokenProvider.createToken(2L)).willReturn("access-token");
+        given(jwtTokenProvider.createAccessToken(2L)).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(2L)).willReturn("refresh-token");
 
         // when

@@ -7,6 +7,7 @@ import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.MemberRequestDto;
 import com.offnal.shifterz.domain.member.dto.MemberResponseDto;
+import com.offnal.shifterz.domain.member.exception.MemberErrorCode;
 import com.offnal.shifterz.domain.member.repository.MemberRepository;
 import com.offnal.shifterz.domain.memberOrganizationTeam.repository.MemberOrganizationTeamRepository;
 import com.offnal.shifterz.domain.memo.repository.MemoRepository;
@@ -17,7 +18,6 @@ import com.offnal.shifterz.domain.work.repository.WorkCalendarRepository;
 import com.offnal.shifterz.domain.work.repository.WorkInstanceRepository;
 import com.offnal.shifterz.global.common.AuthService;
 import com.offnal.shifterz.global.exception.CustomException;
-import com.offnal.shifterz.global.exception.ErrorReason;
 import com.offnal.shifterz.global.util.RedisUtil;
 import com.offnal.shifterz.global.util.S3Service;
 import com.offnal.shifterz.global.util.dto.PresignedUrlResponse;
@@ -126,7 +126,7 @@ public class MemberService {
                     key
             );
         } catch (Exception e) {
-            throw new CustomException(S3Service.S3ErrorCode.UPLOAD_TO_S3_FAILED);
+            throw new CustomException(MemberErrorCode.UPLOAD_TO_S3_FAILED);
         }
     }
 
@@ -141,9 +141,9 @@ public class MemberService {
             if (lower.contains(".jpg"))
                 return "jpg";
 
-            throw new CustomException(S3Service.S3ErrorCode.UNSUPPORTED_CONTENT_TYPE);
+            throw new CustomException(MemberErrorCode.UNSUPPORTED_CONTENT_TYPE);
         } catch (Exception e) {
-            throw new CustomException(S3Service.S3ErrorCode.UNSUPPORTED_CONTENT_TYPE);
+            throw new CustomException(MemberErrorCode.UNSUPPORTED_CONTENT_TYPE);
         }
     }
 
@@ -203,7 +203,8 @@ public class MemberService {
 
             redisUtil.delete("RT:" + memberId);
 
-            tokenService.blacklistAccessToken(request);
+            String accessToken = request.getHeader("Authorization").substring(7);
+            tokenService.blacklistAccessToken(accessToken);
 
             Log withdrawLog = Log.builder()
                     .member(null)
@@ -273,7 +274,7 @@ public class MemberService {
         String currentKey = member.getProfileImageKey();
 
         if (currentKey == null || currentKey.isEmpty()) {
-            throw new CustomException(S3Service.S3ErrorCode.S3_KEY_NOT_FOUND);
+            throw new CustomException(MemberErrorCode.S3_KEY_NOT_FOUND);
         }
 
         s3Service.deleteFile(currentKey);
@@ -315,19 +316,6 @@ public class MemberService {
         }
 
         return presigned;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public enum MemberErrorCode implements ErrorReason {
-        MEMBER_NOT_FOUND("MEM001", HttpStatus.NOT_FOUND, "해당 회원을 찾을 수 없습니다."),
-        MEMBER_SAVE_FAILED("MEM002", HttpStatus.INTERNAL_SERVER_ERROR, "회원 저장에 실패했습니다."),
-        MEMBER_ACCESS_DENIED("MEM003", HttpStatus.FORBIDDEN, "회원 접근 권한이 없습니다."),
-        MEMBER_WITHDRAW_FAILED("MEM004", HttpStatus.INTERNAL_SERVER_ERROR, "회원 탈퇴에 실패했습니다.");
-
-        private final String code;
-        private final HttpStatus status;
-        private final String message;
     }
 
 }

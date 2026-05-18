@@ -1,7 +1,7 @@
 package com.offnal.shifterz.global.util.encrypt.impl.aes;
 
 import com.offnal.shifterz.global.exception.CustomException;
-import com.offnal.shifterz.global.exception.ErrorReason;
+import com.offnal.shifterz.global.exception.code.AESErrorCode;
 import com.offnal.shifterz.global.util.encrypt.TwoWayEncryptor;
 import com.offnal.shifterz.global.util.encrypt.impl.sha.SHAEncryptor;
 import com.offnal.shifterz.global.util.encrypt.impl.sha.SHAType;
@@ -376,21 +376,5 @@ public class AESEncryptor implements TwoWayEncryptor {
             log.error("Base64로 인코딩된 AES 복호화에 실패했습니다.", e);
             throw new CustomException(AESErrorCode.DECRYPT_FAILED);
         }
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public enum AESErrorCode implements ErrorReason {
-        GET_CIPHER_FAILED("AES001", HttpStatus.INTERNAL_SERVER_ERROR, "AES Cipher 객체 생성에 실패하였습니다."),
-        GET_SECRET_KEY_SPEC_FAILED("AES002", HttpStatus.INTERNAL_SERVER_ERROR, "SecretKeySpec 객체 생성에 실패하였습니다."),
-        AES_ENCRYPTOR_CONSTRUCTION_FAILED("AES003", HttpStatus.INTERNAL_SERVER_ERROR, "AESEncryptor 객체 생성에 실패하였습니다."),
-        CIPHER_INIT_FAILED("AES004", HttpStatus.INTERNAL_SERVER_ERROR, "Cipher 초기화에 실패하였습니다."),
-        GENERATE_NONCE_FAILED("AES005", HttpStatus.INTERNAL_SERVER_ERROR, "Nonce 생성에 실패하였습니다."),
-        ENCRYPT_FAILED("AES006", HttpStatus.INTERNAL_SERVER_ERROR, "AES 암호화에 실패하였습니다."),
-        DECRYPT_FAILED("AES007", HttpStatus.INTERNAL_SERVER_ERROR, "AES 복호화에 실패하였습니다.");
-
-        private final String code;
-        private final HttpStatus status;
-        private final String message;
     }
 }

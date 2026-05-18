@@ -1,13 +1,13 @@
 package com.offnal.shifterz.domain.oauth.apple.exception;
 
-import com.offnal.shifterz.global.exception.ErrorReason;
+import com.offnal.shifterz.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum AppleErrorCode implements ErrorReason {
+public enum AppleErrorCode implements ErrorCode {
 
     APPLE_TOKEN_INVALID("APL001", HttpStatus.UNAUTHORIZED, "유효하지 않은 Apple identity token입니다."),
     APPLE_PUBLIC_KEY_NOT_FOUND("APL002", HttpStatus.INTERNAL_SERVER_ERROR, "kid에 해당하는 Apple 공개키를 찾을 수 없습니다."),
