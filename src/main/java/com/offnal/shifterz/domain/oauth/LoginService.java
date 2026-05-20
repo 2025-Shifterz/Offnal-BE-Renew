@@ -20,14 +20,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginService {
 
-    private final KakaoOAuthHandler kakaoOAuthHandler;
-    private final AppleOAuthHandler appleOAuthHandler;
+    private final OAuthHandlerFactory oAuthHandlerFactory;
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
 
     public AuthResponseDto loginWithAppleNative(AppleLoginRequestDto request) {
 
-        OAuthUserInfoDto userInfo = appleOAuthHandler.getUserInfo(request, null);
+        AppleOAuthHandler handler = (AppleOAuthHandler) oAuthHandlerFactory.getProvider(Provider.APPLE);
+        OAuthUserInfoDto userInfo = handler.getUserInfo(request, null);
         return processLogin(Provider.APPLE, userInfo);
     }
 
@@ -57,7 +57,8 @@ public class LoginService {
 
     public AuthResponseDto loginWithKakaoNative(KakaoLoginRequestDto request) {
         try {
-            OAuthUserInfoDto userInfo = kakaoOAuthHandler.getUserInfo(request.getAccessToken());
+            KakaoOAuthHandler handler = (KakaoOAuthHandler) oAuthHandlerFactory.getProvider(Provider.KAKAO);
+            OAuthUserInfoDto userInfo = handler.getUserInfo(request.getAccessToken());
             return processLogin(Provider.KAKAO, userInfo);
         } catch (Exception e) {
             throw new CustomException(OAuthErrorCode.INVALID_SOCIAL_TOKEN);

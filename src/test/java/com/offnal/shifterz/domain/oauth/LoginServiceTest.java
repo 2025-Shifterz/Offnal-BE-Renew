@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class LoginServiceTest {
+    @Mock private OAuthHandlerFactory oAuthHandlerFactory;
     @Mock private KakaoOAuthHandler kakaoOAuthHandler;
     @Mock
     private AppleOAuthHandler appleOAuthHandler;
@@ -48,6 +49,7 @@ class LoginServiceTest {
                 MemberResponseDto.MemberRegisterResponseDto.builder()
                         .id(1L).email("kakao@test.com").memberName("카카오유저").isNewMember(true).build();
 
+        given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
         given(kakaoOAuthHandler.getUserInfo("kakao-access-token")).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
@@ -68,6 +70,7 @@ class LoginServiceTest {
         // given
         KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
         given(request.getAccessToken()).willReturn("invalid-token");
+        given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
         given(kakaoOAuthHandler.getUserInfo("invalid-token")).willThrow(new RuntimeException());
 
         // when & then
@@ -88,6 +91,7 @@ class LoginServiceTest {
                 MemberResponseDto.MemberRegisterResponseDto.builder()
                         .id(2L).email("apple@test.com").memberName("홍길동").isNewMember(false).build();
 
+        given(oAuthHandlerFactory.getProvider(Provider.APPLE)).willReturn(appleOAuthHandler);
         given(appleOAuthHandler.getUserInfo(request, null)).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
