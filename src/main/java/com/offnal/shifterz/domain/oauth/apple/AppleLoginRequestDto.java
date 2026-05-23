@@ -1,5 +1,6 @@
 package com.offnal.shifterz.domain.oauth.apple;
 
+import com.offnal.shifterz.domain.oauth.LoginRequestDto;
 import lombok.Data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,10 +9,10 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class AppleLoginRequestDto {
+public class AppleLoginRequestDto extends LoginRequestDto {
 
-    @Schema(description = "iOS 네이티브 로그인에서 받은 identityToken(JWT)", required = true)
-    private String identityToken;
+//    @Schema(description = "iOS 네이티브 로그인에서 받은 identityToken(JWT)", required = true)
+//    private String identityToken;
 
     @Schema(description = "Authorization Code", required = true)
     private String authorizationCode;

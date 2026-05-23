@@ -2,26 +2,38 @@ package com.offnal.shifterz.domain.oauth.kakao;
 
 import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.io.IOException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 
-@ExtendWith(MockitoExtension.class)
 class KakaoOAuthHandlerTest {
-    @Mock
-    private KakaoService kakaoService;
 
-    @InjectMocks
+    private MockWebServer mockWebServer;
     private KakaoOAuthHandler kakaoOAuthHandler;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        mockWebServer = new MockWebServer();
+        mockWebServer.start();
+        WebClient webClient = WebClient.create(mockWebServer.url("/").toString());
+        kakaoOAuthHandler = new KakaoOAuthHandler(webClient);
+    }
+
+    @AfterEach
+    void tearDown() throws IOException {
+        mockWebServer.shutdown();
+    }
 
     @Test
     void getProviderType은_KAKAO를_반환한다() {
@@ -29,23 +41,19 @@ class KakaoOAuthHandlerTest {
     }
 
     @Test
-    void KakaoUserInfoResponseDto를_OAuthUserInfoDto로_정상_변환한다() {
+    void getUserInfo_OAuthUserInfoDto로_정상_변환한다() {
         // given
-        KakaoUserInfoResponseDto dto = mock(KakaoUserInfoResponseDto.class);
-        KakaoUserInfoResponseDto.KakaoAccount account = mock(KakaoUserInfoResponseDto.KakaoAccount.class);
-        KakaoUserInfoResponseDto.KakaoAccount.Profile profile = mock(KakaoUserInfoResponseDto.KakaoAccount.Profile.class);
+        mockWebServer.enqueue(kakaoApiResponse(
+                12345L, "kakao@test.com", "카카오유저", "https://img.kakao.com/profile.jpg"));
 
-        given(dto.getId()).willReturn(12345L);
-        given(dto.getKakaoAccount()).willReturn(account);
-        given(account.getEmail()).willReturn("kakao@test.com");
-        given(account.getProfile()).willReturn(profile);
-        given(profile.getNickName()).willReturn("카카오유저");
-        given(profile.getProfileImageUrl()).willReturn("https://img.kakao.com/profile.jpg");
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        given(request.getToken()).willReturn("valid-access-token");
 
         // when
-        OAuthUserInfoDto result = kakaoOAuthHandler.toOAuthUserInfoDto(dto);
+        OAuthUserInfoDto result = kakaoOAuthHandler.getUserInfo(request);
 
         // then
+        assertThat(result.getProvider()).isEqualTo(Provider.KAKAO);
         assertThat(result.getProviderId()).isEqualTo("12345");
         assertThat(result.getEmail()).isEqualTo("kakao@test.com");
         assertThat(result.getNickname()).isEqualTo("카카오유저");
@@ -54,26 +62,41 @@ class KakaoOAuthHandlerTest {
     }
 
     @Test
-    void accessToken으로_사용자_정보를_조회하고_변환한다() {
+    void getUserInfo_profileImageUrl이_null이어도_정상_변환한다() {
         // given
-        String accessToken = "valid-access-token";
-        KakaoUserInfoResponseDto dto = mock(KakaoUserInfoResponseDto.class);
-        KakaoUserInfoResponseDto.KakaoAccount account = mock(KakaoUserInfoResponseDto.KakaoAccount.class);
-        KakaoUserInfoResponseDto.KakaoAccount.Profile profile = mock(KakaoUserInfoResponseDto.KakaoAccount.Profile.class);
+        mockWebServer.enqueue(kakaoApiResponse(1L, "kakao@test.com", "유저", null));
 
-        given(kakaoService.getUserInfo(accessToken)).willReturn(dto);
-        given(dto.getId()).willReturn(1L);
-        given(dto.getKakaoAccount()).willReturn(account);
-        given(account.getEmail()).willReturn("kakao@test.com");
-        given(account.getProfile()).willReturn(profile);
-        given(profile.getNickName()).willReturn("유저");
-        given(profile.getProfileImageUrl()).willReturn(null);
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        given(request.getToken()).willReturn("valid-access-token");
 
         // when
-        OAuthUserInfoDto result = kakaoOAuthHandler.getUserInfo(accessToken);
+        OAuthUserInfoDto result = kakaoOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getProviderId()).isEqualTo("1");
-        then(kakaoService).should(times(1)).getUserInfo(accessToken);
+        assertThat(result.getProfileImageUrl()).isNull();
+    }
+
+    private MockResponse kakaoApiResponse(long id, String email, String nickname, String profileImageUrl) {
+        String profileImageJson = profileImageUrl != null
+                ? "\"profile_image_url\":\"" + profileImageUrl + "\""
+                : "\"profile_image_url\":null";
+
+        String body = String.format("""
+                {
+                  "id": %d,
+                  "kakao_account": {
+                    "email": "%s",
+                    "profile": {
+                      "nickname": "%s",
+                      %s
+                    }
+                  }
+                }
+                """, id, email, nickname, profileImageJson);
+
+        return new MockResponse()
+                .setBody(body)
+                .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
     }
 }

@@ -5,8 +5,8 @@ import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
 import com.offnal.shifterz.domain.oauth.apple.AppleUserInfoResponseDto;
 
 public interface AppleSocialService {
-
-    AppleUserInfoResponseDto getUserInfoFromIdentityToken(AppleLoginRequestDto request);
-
-    DecodedJWT verifyIdentityToken(String identityToken);
+//
+//    AppleUserInfoResponseDto getUserInfoFromIdentityToken(AppleLoginRequestDto request);
+//
+//    DecodedJWT verifyIdentityToken(String identityToken);
 }

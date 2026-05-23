@@ -24,8 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class OAuthHandlerFactoryTest {
     private OAuthHandlerFactory factory;
 
-    @Mock
-    private KakaoOAuthHandler kakaoOAuthHandler;
+    @Mock private KakaoOAuthHandler kakaoOAuthHandler;
     @Mock private AppleOAuthHandler appleOAuthHandler;
 
     @BeforeEach

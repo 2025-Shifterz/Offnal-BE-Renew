@@ -1,11 +1,13 @@
 package com.offnal.shifterz.domain.oauth;
 
+import com.offnal.shifterz.domain.member.domain.Provider;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
 public class OAuthUserInfoDto {
+    private Provider provider;
     private String providerId; // kakao: id, apple: sub
     private String email;
     private String nickname;

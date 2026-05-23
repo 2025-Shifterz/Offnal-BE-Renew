@@ -28,8 +28,7 @@ import static org.mockito.Mockito.mock;
 class LoginServiceTest {
     @Mock private OAuthHandlerFactory oAuthHandlerFactory;
     @Mock private KakaoOAuthHandler kakaoOAuthHandler;
-    @Mock
-    private AppleOAuthHandler appleOAuthHandler;
+    @Mock private AppleOAuthHandler appleOAuthHandler;
     @Mock private MemberService memberService;
     @Mock private JwtTokenProvider jwtTokenProvider;
 
@@ -37,12 +36,13 @@ class LoginServiceTest {
     private LoginService loginService;
 
     @Test
-    void 카카오_네이티브_로그인_성공() {
+    void 카카오_로그인_성공() {
         // given
         KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
-        given(request.getAccessToken()).willReturn("kakao-access-token");
+        given(request.getProvider()).willReturn(Provider.KAKAO);
 
         OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+                .provider(Provider.KAKAO)
                 .providerId("12345").email("kakao@test.com").nickname("카카오유저").build();
 
         MemberResponseDto.MemberRegisterResponseDto registerResult =
@@ -50,14 +50,14 @@ class LoginServiceTest {
                         .id(1L).email("kakao@test.com").memberName("카카오유저").isNewMember(true).build();
 
         given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
-        given(kakaoOAuthHandler.getUserInfo("kakao-access-token")).willReturn(userInfo);
+        given(kakaoOAuthHandler.getUserInfo(request)).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
         given(jwtTokenProvider.createAccessToken(1L)).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(1L)).willReturn("refresh-token");
 
         // when
-        AuthResponseDto result = loginService.loginWithKakaoNative(request);
+        AuthResponseDto result = loginService.login(request);
 
         // then
         assertThat(result).isNotNull();
@@ -66,24 +66,13 @@ class LoginServiceTest {
     }
 
     @Test
-    void 유효하지_않은_카카오_토큰이면_CustomException이_발생한다() {
-        // given
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
-        given(request.getAccessToken()).willReturn("invalid-token");
-        given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
-        given(kakaoOAuthHandler.getUserInfo("invalid-token")).willThrow(new RuntimeException());
-
-        // when & then
-        assertThatThrownBy(() -> loginService.loginWithKakaoNative(request))
-                .isInstanceOf(CustomException.class);
-    }
-
-    @Test
-    void 애플_네이티브_로그인_성공() {
+    void 애플_로그인_성공() {
         // given
         AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
+        given(request.getProvider()).willReturn(Provider.APPLE);
 
         OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+                .provider(Provider.APPLE)
                 .providerId("apple-sub").email("apple@test.com")
                 .nickname("홍길동").appleRefreshToken("apple-refresh-token").build();
 
@@ -92,18 +81,55 @@ class LoginServiceTest {
                         .id(2L).email("apple@test.com").memberName("홍길동").isNewMember(false).build();
 
         given(oAuthHandlerFactory.getProvider(Provider.APPLE)).willReturn(appleOAuthHandler);
-        given(appleOAuthHandler.getUserInfo(request, null)).willReturn(userInfo);
+        given(appleOAuthHandler.getUserInfo(request)).willReturn(userInfo);
         given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
                 .willReturn(registerResult);
         given(jwtTokenProvider.createAccessToken(2L)).willReturn("access-token");
         given(jwtTokenProvider.createRefreshToken(2L)).willReturn("refresh-token");
 
         // when
-        AuthResponseDto result = loginService.loginWithAppleNative(request);
+        AuthResponseDto result = loginService.login(request);
 
         // then
         assertThat(result).isNotNull();
         then(memberService).should()
                 .registerMemberIfAbsent(eq(Provider.APPLE), any(), any(), any(), any(), any(), eq("apple-refresh-token"));
+    }
+
+    @Test
+    void handler에서_예외가_발생하면_그대로_전파된다() {
+        // given
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        given(request.getProvider()).willReturn(Provider.KAKAO);
+        given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
+        given(kakaoOAuthHandler.getUserInfo(request)).willThrow(new RuntimeException("Invalid Parameter"));
+
+        // when & then
+        assertThatThrownBy(() -> loginService.login(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Invalid Parameter");
+    }
+
+    @Test
+    void memberId가_null이면_CustomException이_발생한다() {
+        // given
+        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        given(request.getProvider()).willReturn(Provider.KAKAO);
+
+        OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+                .provider(Provider.KAKAO).providerId("12345").email("kakao@test.com").build();
+
+        MemberResponseDto.MemberRegisterResponseDto registerResult =
+                MemberResponseDto.MemberRegisterResponseDto.builder()
+                        .id(null).email("kakao@test.com").memberName("카카오유저").isNewMember(true).build();
+
+        given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
+        given(kakaoOAuthHandler.getUserInfo(request)).willReturn(userInfo);
+        given(memberService.registerMemberIfAbsent(any(), any(), any(), any(), any(), any(), any()))
+                .willReturn(registerResult);
+
+        // when & then
+        assertThatThrownBy(() -> loginService.login(request))
+                .isInstanceOf(com.offnal.shifterz.global.exception.CustomException.class);
     }
 }

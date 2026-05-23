@@ -11,7 +11,6 @@ import com.offnal.shifterz.domain.member.exception.MemberErrorCode;
 import com.offnal.shifterz.domain.member.repository.MemberRepository;
 import com.offnal.shifterz.domain.memberOrganizationTeam.repository.MemberOrganizationTeamRepository;
 import com.offnal.shifterz.domain.memo.repository.MemoRepository;
-import com.offnal.shifterz.domain.oauth.apple.AppleService;
 import com.offnal.shifterz.domain.organization.repository.OrganizationRepository;
 import com.offnal.shifterz.domain.todo.repository.TodoRepository;
 import com.offnal.shifterz.domain.work.repository.WorkCalendarRepository;
@@ -24,11 +23,8 @@ import com.offnal.shifterz.global.util.dto.PresignedUrlResponse;
 import com.offnal.shifterz.global.util.encrypt.EncryptUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,7 +38,6 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
-    private final AppleService appleService;
     private final MemoRepository memoRepository;
     private final TodoRepository todoRepository;
     private final OrganizationRepository organizationRepository;
@@ -167,28 +162,29 @@ public class MemberService {
     }
 
     /**
-     * 회원 탈퇴
+     * Facade에서 사용 - 현재 인증된 회원 엔티티 반환
      */
     @Transactional
-    public void withdrawCurrentMember(HttpServletRequest request) {
-
+    public Member getCurrentMemberEntity() {
         Long memberId = AuthService.getCurrentUserId();
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+    }
 
+    /**
+     * 회원 탈퇴 - Apple revoke는 MemberWithdrawFacade에서 선처리 후 호출
+     */
+    @Transactional
+    public void executeWithdraw(Member member, HttpServletRequest request) {
+        Long memberId = member.getId();
         String anonymized = "deleted_user_" + UUID.randomUUID();
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
-
         try {
-
-            revokeAppleAccountIfNecessary(member);
-
             String profileImageKey = member.getProfileImageKey();
             if (profileImageKey != null && !profileImageKey.isEmpty()) {
                 s3Service.deleteFile(profileImageKey);
             }
 
-            // 로그에서 member 비식별화 (null 처리)
             logRepository.anonymizeMemberLogs(memberId, anonymized);
 
             memoRepository.deleteByMemberId(memberId);
@@ -283,19 +279,6 @@ public class MemberService {
                 member.getMemberName(),
                 null
         );
-    }
-
-    private void revokeAppleAccountIfNecessary(Member member) {
-
-        if (member.getProvider() != Provider.APPLE) {
-            return;
-        }
-
-        try {
-            appleService.revoke(member);
-        } catch (Exception ex) {
-            throw new CustomException(MemberErrorCode.MEMBER_WITHDRAW_FAILED);
-        }
     }
 
     @Transactional

@@ -24,16 +24,15 @@ public class LoginService {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthResponseDto loginWithAppleNative(AppleLoginRequestDto request) {
-
-        AppleOAuthHandler handler = (AppleOAuthHandler) oAuthHandlerFactory.getProvider(Provider.APPLE);
-        OAuthUserInfoDto userInfo = handler.getUserInfo(request, null);
-        return processLogin(Provider.APPLE, userInfo);
+    public AuthResponseDto login(LoginRequestDto dto) {
+        OAuthHandler handler = oAuthHandlerFactory.getProvider(dto.getProvider());
+        OAuthUserInfoDto userInfo = handler.getUserInfo(dto);
+        return processLogin(userInfo);
     }
 
-    private AuthResponseDto processLogin(Provider provider, OAuthUserInfoDto userInfo){
+    private AuthResponseDto processLogin(OAuthUserInfoDto userInfo) {
         MemberResponseDto.MemberRegisterResponseDto result = memberService.registerMemberIfAbsent(
-                provider,
+                userInfo.getProvider(),
                 userInfo.getProviderId(),
                 userInfo.getEmail(),
                 userInfo.getNickname(),
@@ -44,24 +43,12 @@ public class LoginService {
         return issueTokens(result);
     }
 
-
     private AuthResponseDto issueTokens(MemberResponseDto.MemberRegisterResponseDto result) {
         if (result.getId() == null) {
             throw new CustomException(MemberErrorCode.MEMBER_SAVE_FAILED);
         }
-        String jwtAccessToken = jwtTokenProvider.createAccessToken(result.getId());
-        String jwtRefreshToken = jwtTokenProvider.createRefreshToken(result.getId());
-        return AuthResponseDto.from(result, jwtAccessToken, jwtRefreshToken);
-    }
-
-
-    public AuthResponseDto loginWithKakaoNative(KakaoLoginRequestDto request) {
-        try {
-            KakaoOAuthHandler handler = (KakaoOAuthHandler) oAuthHandlerFactory.getProvider(Provider.KAKAO);
-            OAuthUserInfoDto userInfo = handler.getUserInfo(request.getAccessToken());
-            return processLogin(Provider.KAKAO, userInfo);
-        } catch (Exception e) {
-            throw new CustomException(OAuthErrorCode.INVALID_SOCIAL_TOKEN);
-        }
+        String accessToken = jwtTokenProvider.createAccessToken(result.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(result.getId());
+        return AuthResponseDto.from(result, accessToken, refreshToken);
     }
 }
