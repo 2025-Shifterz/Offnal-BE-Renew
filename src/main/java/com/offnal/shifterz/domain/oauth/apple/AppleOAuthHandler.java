@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.offnal.shifterz.core.config.AppleProperties;
 import com.offnal.shifterz.domain.member.domain.Member;
 import com.offnal.shifterz.domain.member.domain.Provider;
-import com.offnal.shifterz.domain.oauth.LoginRequestDto;
+import com.offnal.shifterz.domain.oauth.LoginRequest;
 import com.offnal.shifterz.domain.oauth.OAuthHandler;
-import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
+import com.offnal.shifterz.domain.oauth.OAuthUserInfo;
 import com.offnal.shifterz.domain.oauth.apple.exception.AppleErrorCode;
 import com.offnal.shifterz.domain.oauth.exception.OAuthErrorCode;
 import com.offnal.shifterz.global.exception.CustomException;
@@ -64,15 +64,15 @@ public class AppleOAuthHandler implements OAuthHandler {
     }
 
     @Override
-    public OAuthUserInfoDto getUserInfo(LoginRequestDto dto) {
-        if (!(dto instanceof AppleLoginRequestDto appleDto)) {
+    public OAuthUserInfo getUserInfo(LoginRequest dto) {
+        if (!(dto instanceof AppleLoginRequest appleDto)) {
             throw new CustomException(OAuthErrorCode.UNSUPPORTED_PROVIDER);
         }
 
         DecodedJWT jwt = verifyIdentityToken(dto.getToken());
-        AppleAuthTokenResponseDto token = exchangeAuthorizationCode(appleDto.getAuthorizationCode());
+        AppleAuthTokenResponse token = exchangeAuthorizationCode(appleDto.getAuthorizationCode());
 
-        return OAuthUserInfoDto.builder()
+        return OAuthUserInfo.builder()
                 .provider(Provider.APPLE)
                 .providerId(jwt.getSubject())
                 .email(appleDto.getEmail() != null ? appleDto.getEmail() : jwt.getClaim("email").asString())
@@ -120,7 +120,7 @@ public class AppleOAuthHandler implements OAuthHandler {
         }
     }
 
-    private AppleAuthTokenResponseDto exchangeAuthorizationCode(String authorizationCode) {
+    private AppleAuthTokenResponse exchangeAuthorizationCode(String authorizationCode) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("client_id", appleProperties.clientId());
         params.add("client_secret", createClientSecret());
@@ -142,7 +142,7 @@ public class AppleOAuthHandler implements OAuthHandler {
         }
 
         try {
-            return objectMapper.readValue(rawResponse.getBody(), AppleAuthTokenResponseDto.class);
+            return objectMapper.readValue(rawResponse.getBody(), AppleAuthTokenResponse.class);
         } catch (Exception e) {
             log.error("Apple Token Parse Error", e);
             throw new CustomException(AppleErrorCode.APPLE_TOKEN_EXCHANGE_FAIL);
@@ -213,7 +213,7 @@ public class AppleOAuthHandler implements OAuthHandler {
         }
     }
 
-    private String resolveNickname(AppleLoginRequestDto request) {
+    private String resolveNickname(AppleLoginRequest request) {
         if (request.getFullName() != null) {
             String name = request.getFullName().getFullName();
             if (name != null && !name.isBlank()) return name;

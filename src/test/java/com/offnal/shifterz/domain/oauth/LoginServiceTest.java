@@ -5,11 +5,10 @@ import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.domain.member.dto.MemberResponseDto;
 import com.offnal.shifterz.domain.member.service.MemberService;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
+import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
 import com.offnal.shifterz.domain.oauth.apple.AppleOAuthHandler;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
 import com.offnal.shifterz.domain.oauth.kakao.KakaoOAuthHandler;
-import com.offnal.shifterz.global.exception.CustomException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,10 +37,10 @@ class LoginServiceTest {
     @Test
     void 카카오_로그인_성공() {
         // given
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
         given(request.getProvider()).willReturn(Provider.KAKAO);
 
-        OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+        OAuthUserInfo userInfo = OAuthUserInfo.builder()
                 .provider(Provider.KAKAO)
                 .providerId("12345").email("kakao@test.com").nickname("카카오유저").build();
 
@@ -68,10 +67,10 @@ class LoginServiceTest {
     @Test
     void 애플_로그인_성공() {
         // given
-        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
+        AppleLoginRequest request = mock(AppleLoginRequest.class);
         given(request.getProvider()).willReturn(Provider.APPLE);
 
-        OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+        OAuthUserInfo userInfo = OAuthUserInfo.builder()
                 .provider(Provider.APPLE)
                 .providerId("apple-sub").email("apple@test.com")
                 .nickname("홍길동").appleRefreshToken("apple-refresh-token").build();
@@ -99,7 +98,7 @@ class LoginServiceTest {
     @Test
     void handler에서_예외가_발생하면_그대로_전파된다() {
         // given
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
         given(request.getProvider()).willReturn(Provider.KAKAO);
         given(oAuthHandlerFactory.getProvider(Provider.KAKAO)).willReturn(kakaoOAuthHandler);
         given(kakaoOAuthHandler.getUserInfo(request)).willThrow(new RuntimeException("Invalid Parameter"));
@@ -113,10 +112,10 @@ class LoginServiceTest {
     @Test
     void memberId가_null이면_CustomException이_발생한다() {
         // given
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
         given(request.getProvider()).willReturn(Provider.KAKAO);
 
-        OAuthUserInfoDto userInfo = OAuthUserInfoDto.builder()
+        OAuthUserInfo userInfo = OAuthUserInfo.builder()
                 .provider(Provider.KAKAO).providerId("12345").email("kakao@test.com").build();
 
         MemberResponseDto.MemberRegisterResponseDto registerResult =

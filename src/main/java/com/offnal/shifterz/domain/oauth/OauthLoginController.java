@@ -2,12 +2,8 @@ package com.offnal.shifterz.domain.oauth;
 
 
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
-import com.offnal.shifterz.global.exception.ErrorApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +58,7 @@ public class OauthLoginController {
                     """
     )
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto dto) {
+    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequest dto) {
         return ResponseEntity.ok(loginService.login(dto));
     }
 }

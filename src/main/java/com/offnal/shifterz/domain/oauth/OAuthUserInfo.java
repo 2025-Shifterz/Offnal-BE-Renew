@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class OAuthUserInfoDto {
+public class OAuthUserInfo {
     private Provider provider;
     private String providerId; // kakao: id, apple: sub
     private String email;

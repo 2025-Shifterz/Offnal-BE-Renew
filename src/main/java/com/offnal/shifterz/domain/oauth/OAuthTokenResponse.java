@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TokenResponseDto {
+public class OAuthTokenResponse {
 
     @JsonProperty("id_token")
     private String idToken; // Apple 로그인 시에만 반환

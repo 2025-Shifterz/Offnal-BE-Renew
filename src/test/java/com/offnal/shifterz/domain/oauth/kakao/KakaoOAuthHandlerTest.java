@@ -1,7 +1,7 @@
 package com.offnal.shifterz.domain.oauth.kakao;
 
 import com.offnal.shifterz.domain.member.domain.Provider;
-import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
+import com.offnal.shifterz.domain.oauth.OAuthUserInfo;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -46,11 +46,11 @@ class KakaoOAuthHandlerTest {
         mockWebServer.enqueue(kakaoApiResponse(
                 12345L, "kakao@test.com", "카카오유저", "https://img.kakao.com/profile.jpg"));
 
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
         given(request.getToken()).willReturn("valid-access-token");
 
         // when
-        OAuthUserInfoDto result = kakaoOAuthHandler.getUserInfo(request);
+        OAuthUserInfo result = kakaoOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getProvider()).isEqualTo(Provider.KAKAO);
@@ -66,11 +66,11 @@ class KakaoOAuthHandlerTest {
         // given
         mockWebServer.enqueue(kakaoApiResponse(1L, "kakao@test.com", "유저", null));
 
-        KakaoLoginRequestDto request = mock(KakaoLoginRequestDto.class);
+        KakaoLoginRequest request = mock(KakaoLoginRequest.class);
         given(request.getToken()).willReturn("valid-access-token");
 
         // when
-        OAuthUserInfoDto result = kakaoOAuthHandler.getUserInfo(request);
+        OAuthUserInfo result = kakaoOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getProviderId()).isEqualTo("1");

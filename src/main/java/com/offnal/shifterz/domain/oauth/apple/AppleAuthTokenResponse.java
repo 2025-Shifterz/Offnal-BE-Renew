@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class AppleAuthTokenResponseDto {
+public class AppleAuthTokenResponse {
 
     @JsonProperty("access_token")
     private String accessToken;

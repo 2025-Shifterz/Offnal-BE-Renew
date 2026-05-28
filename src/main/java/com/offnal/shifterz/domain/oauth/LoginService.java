@@ -1,15 +1,10 @@
 package com.offnal.shifterz.domain.oauth;
 
 import com.offnal.shifterz.core.jwt.JwtTokenProvider;
-import com.offnal.shifterz.domain.member.domain.Provider;
 import com.offnal.shifterz.domain.member.dto.AuthResponseDto;
 import com.offnal.shifterz.domain.member.dto.MemberResponseDto;
 import com.offnal.shifterz.domain.member.exception.MemberErrorCode;
 import com.offnal.shifterz.domain.member.service.MemberService;
-import com.offnal.shifterz.domain.oauth.apple.*;
-import com.offnal.shifterz.domain.oauth.exception.OAuthErrorCode;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoOAuthHandler;
 import com.offnal.shifterz.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +19,13 @@ public class LoginService {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthResponseDto login(LoginRequestDto dto) {
+    public AuthResponseDto login(LoginRequest dto) {
         OAuthHandler handler = oAuthHandlerFactory.getProvider(dto.getProvider());
-        OAuthUserInfoDto userInfo = handler.getUserInfo(dto);
+        OAuthUserInfo userInfo = handler.getUserInfo(dto);
         return processLogin(userInfo);
     }
 
-    private AuthResponseDto processLogin(OAuthUserInfoDto userInfo) {
+    private AuthResponseDto processLogin(OAuthUserInfo userInfo) {
         MemberResponseDto.MemberRegisterResponseDto result = memberService.registerMemberIfAbsent(
                 userInfo.getProvider(),
                 userInfo.getProviderId(),

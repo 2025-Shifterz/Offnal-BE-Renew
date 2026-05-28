@@ -1,10 +1,9 @@
 package com.offnal.shifterz.domain.oauth.kakao;
 
 import com.offnal.shifterz.domain.member.domain.Provider;
-import com.offnal.shifterz.domain.oauth.LoginRequestDto;
+import com.offnal.shifterz.domain.oauth.LoginRequest;
 import com.offnal.shifterz.domain.oauth.OAuthHandler;
-import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
-import lombok.RequiredArgsConstructor;
+import com.offnal.shifterz.domain.oauth.OAuthUserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
@@ -29,9 +28,9 @@ public class KakaoOAuthHandler implements OAuthHandler {
     }
 
     @Override
-    public OAuthUserInfoDto getUserInfo(LoginRequestDto dto) {
-        KakaoUserInfoResponseDto rawInfo = fetchUserInfo(dto.getToken());
-        return OAuthUserInfoDto.builder()
+    public OAuthUserInfo getUserInfo(LoginRequest dto) {
+        KakaoUserInfoResponse rawInfo = fetchUserInfo(dto.getToken());
+        return OAuthUserInfo.builder()
                 .provider(Provider.KAKAO)
                 .providerId(String.valueOf(rawInfo.getId()))
                 .email(rawInfo.getKakaoAccount().getEmail())
@@ -40,7 +39,7 @@ public class KakaoOAuthHandler implements OAuthHandler {
                 .build();
     }
 
-    private KakaoUserInfoResponseDto fetchUserInfo(String accessToken) {
+    private KakaoUserInfoResponse fetchUserInfo(String accessToken) {
         return kakaoWebClient
                 .get()
                 .uri("/v2/user/me")
@@ -48,7 +47,7 @@ public class KakaoOAuthHandler implements OAuthHandler {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, r -> Mono.error(new RuntimeException("Invalid Parameter")))
                 .onStatus(HttpStatusCode::is5xxServerError, r -> Mono.error(new RuntimeException("Internal Server Error")))
-                .bodyToMono(KakaoUserInfoResponseDto.class)
+                .bodyToMono(KakaoUserInfoResponse.class)
                 .block();
     }
 }

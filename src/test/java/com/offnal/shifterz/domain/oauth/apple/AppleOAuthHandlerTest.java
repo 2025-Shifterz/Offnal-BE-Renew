@@ -5,7 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.offnal.shifterz.core.config.AppleProperties;
 import com.offnal.shifterz.domain.member.domain.Provider;
-import com.offnal.shifterz.domain.oauth.OAuthUserInfoDto;
+import com.offnal.shifterz.domain.oauth.OAuthUserInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,8 +101,8 @@ class AppleOAuthHandlerTest {
         mockServer.expect(requestTo(APPLE_TOKEN_URL))
                 .andRespond(withSuccess("{\"refresh_token\":\"refresh-token\"}", MediaType.APPLICATION_JSON));
 
-        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
-        AppleLoginRequestDto.FullName fullName = mock(AppleLoginRequestDto.FullName.class);
+        AppleLoginRequest request = mock(AppleLoginRequest.class);
+        AppleLoginRequest.FullName fullName = mock(AppleLoginRequest.FullName.class);
         given(request.getToken()).willReturn(identityToken);
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn("apple@test.com");
@@ -110,7 +110,7 @@ class AppleOAuthHandlerTest {
         given(fullName.getFullName()).willReturn("홍길동");
 
         // when
-        OAuthUserInfoDto result = appleOAuthHandler.getUserInfo(request);
+        OAuthUserInfo result = appleOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getProvider()).isEqualTo(Provider.APPLE);
@@ -131,14 +131,14 @@ class AppleOAuthHandlerTest {
         mockServer.expect(requestTo(APPLE_TOKEN_URL))
                 .andRespond(withSuccess("{\"refresh_token\":\"refresh-token\"}", MediaType.APPLICATION_JSON));
 
-        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
+        AppleLoginRequest request = mock(AppleLoginRequest.class);
         given(request.getToken()).willReturn(identityToken);
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn("apple@test.com");
         given(request.getFullName()).willReturn(null);
 
         // when
-        OAuthUserInfoDto result = appleOAuthHandler.getUserInfo(request);
+        OAuthUserInfo result = appleOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getNickname()).isEqualTo("Apple User");
@@ -155,14 +155,14 @@ class AppleOAuthHandlerTest {
         mockServer.expect(requestTo(APPLE_TOKEN_URL))
                 .andRespond(withSuccess("{\"refresh_token\":\"refresh-token\"}", MediaType.APPLICATION_JSON));
 
-        AppleLoginRequestDto request = mock(AppleLoginRequestDto.class);
+        AppleLoginRequest request = mock(AppleLoginRequest.class);
         given(request.getToken()).willReturn(identityToken);
         given(request.getAuthorizationCode()).willReturn("auth-code");
         given(request.getEmail()).willReturn(null);
         given(request.getFullName()).willReturn(null);
 
         // when
-        OAuthUserInfoDto result = appleOAuthHandler.getUserInfo(request);
+        OAuthUserInfo result = appleOAuthHandler.getUserInfo(request);
 
         // then
         assertThat(result.getEmail()).isEqualTo("from-token@test.com");

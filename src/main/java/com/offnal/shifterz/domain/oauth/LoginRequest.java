@@ -3,8 +3,8 @@ package com.offnal.shifterz.domain.oauth;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.offnal.shifterz.domain.member.domain.Provider;
-import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequestDto;
-import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequestDto;
+import com.offnal.shifterz.domain.oauth.apple.AppleLoginRequest;
+import com.offnal.shifterz.domain.oauth.kakao.KakaoLoginRequest;
 import lombok.Getter;
 
 @Getter
@@ -15,10 +15,10 @@ import lombok.Getter;
         visible = true
 )
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = KakaoLoginRequestDto.class, name = "KAKAO"),
-        @JsonSubTypes.Type(value = AppleLoginRequestDto.class, name = "APPLE")
+        @JsonSubTypes.Type(value = KakaoLoginRequest.class, name = "KAKAO"),
+        @JsonSubTypes.Type(value = AppleLoginRequest.class, name = "APPLE")
 })
-public abstract class LoginRequestDto {
+public abstract class LoginRequest {
     private Provider provider;
     private String token; // kakao: accessToken, apple: identityToken
 }

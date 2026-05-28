@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class KakaoUserInfoResponseDto {
+public class KakaoUserInfoResponse {
 
     // 회원 번호
     @JsonProperty("id")
