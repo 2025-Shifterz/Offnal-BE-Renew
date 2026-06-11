@@ -1,5 +1,6 @@
 package com.offnal.shifterz.global.exception;
 
+import com.offnal.shifterz.global.exception.code.CommonErrorCode;
 import org.springframework.http.HttpStatus;
 
 import com.offnal.shifterz.core.jwt.exception.TokenErrorCode;

@@ -1,8 +1,5 @@
 package com.offnal.shifterz.core.jwt;
 
-import java.util.Collection;
-import java.util.Collections;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +7,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.offnal.shifterz.domain.member.domain.Member;
 
 import lombok.Getter;
+
+import java.util.Collection;
+import java.util.Collections;
 
 @Getter
 public class CustomUserDetails implements UserDetails {
@@ -29,15 +29,15 @@ public class CustomUserDetails implements UserDetails {
 		);
 	}
 
-	@Override
-	public String getPassword() {
-		return null;
-	}
+    @Override
+    public String getPassword() {
+        return null;
+    }
 
-	@Override
-	public String getUsername() {
-		return username;
-	}
+    @Override
+    public String getUsername() {
+        return username;
+    }
 
 	@Override
 	public boolean isAccountNonExpired() {

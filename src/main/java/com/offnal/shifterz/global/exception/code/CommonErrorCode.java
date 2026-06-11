@@ -1,5 +1,6 @@
-package com.offnal.shifterz.global.exception;
+package com.offnal.shifterz.global.exception.code;
 
+import com.offnal.shifterz.global.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter

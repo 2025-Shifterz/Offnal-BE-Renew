@@ -38,5 +38,11 @@ public class Memo extends BaseTimeEntity {
     @JoinColumn(name = "organization_id")
     private Organization organization; // nullable
 
+    //마이그레이션 후 삭제
+    public void migrateTitleContent(String encryptedTitle, String encryptedContent) {
+        this.title = encryptedTitle;
+        this.content = encryptedContent;
+    }
+
 }
 
